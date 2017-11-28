@@ -1,5 +1,5 @@
 import urllib2
-from flask import request
+import requests
 
 
 class FenixRequest:
@@ -17,6 +17,6 @@ class FenixRequest:
 
         url = self.base_url + "/" + self.api_version + "/" + self.endpoints["person"]
         params = {"access_token" : access_token}
-        j = request.get(url, params)
+        j = requests.get(url, params)
 
         return j  
