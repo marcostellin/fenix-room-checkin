@@ -3,7 +3,7 @@ from flask import render_template
 from flask import Response
 from flask import redirect, url_for
 import json
-from flask import session
+from flask import session, request
 import fenixedu
 
 
