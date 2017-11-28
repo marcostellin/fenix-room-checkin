@@ -1,6 +1,7 @@
 from flask import Flask
 from flask import render_template
 from flask import Response
+from flask import redirect, url_for
 import json
 from flask import session
 import fenixedu
@@ -8,24 +9,23 @@ import fenixedu
 
 application = Flask(__name__)
 
-application.config['REDIRECT_URI'] = "/authorized"
+application.config['REDIRECT_URI'] = "http://room-checkin.us-west-2.elasticbeanstalk.com/authorized"
 application.config['CLIENT_ID'] = "1132965128044586"
 application.config['CLIENT_SECRET'] = "pUJJ1hK2COuTjwurjP6TiZhgXFEVo+dm5dGivY2b7WQGDy+/0tOdrkscT2wSmP0/kBwxj8HnnqgXqoOw7t0eFg=="
-application.config['BASE_URL'] = ""
+application.config['BASE_URL'] = "https://fenix.tecnico.ulisboa.pt/"
 application.config['DEBUG'] = True
 
 
 @application.route('/')
 def index():
-	access_token = session.get('access_token')
+    access_token = session.get('access_token')
     if access_token is None:
-        return redirect(url_for('login'))
-        
-    return "Successfully Logged In"
+        return redirect(url_for('user_login'))
+    
+    return "Successfull login"
 
 
-
-@application.route(application.config['REDIRECT_URI'])
+@application.route('/authorized')
 def user_auth():
 	code = request.args.get('code')
 	config = fenixedu.FenixEduConfiguration(application.config['CLIENT_ID'], 
