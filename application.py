@@ -29,23 +29,21 @@ def index():
 
 @application.route('/authorized')
 def user_auth():
-	code = request.args.get('code')
-	config = fenixedu.FenixEduConfiguration(application.config['CLIENT_ID'], 
+    code = request.args.get('code')
+    config = fenixedu.FenixEduConfiguration(application.config['CLIENT_ID'], 
 											application.config['REDIRECT_URI'],
 											application.config['CLIENT_SECRET'],
 											application.config['BASE_URL'])
 
-	client = fenixedu.FenixEduClient(config)
-	user = client.get_user_by_code(code)
-
+    
+    client = fenixedu.FenixEduClient(config)
+    user = client.get_user_by_code(code)
     resp = FenixRequest().get_person(user.access_token)
-
     data = json.loads(resp.text)
-
-	session['access_token'] = user.access_token
+    session['access_token'] = user.access_token
     session['username'] = data['username']
 
-	return redirect(url_for('index'))
+    return redirect(url_for('index'))
 
 
 @application.route('/login')
