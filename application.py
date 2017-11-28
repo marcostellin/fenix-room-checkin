@@ -28,7 +28,7 @@ def index():
 
     resp = FenixRequest().get_person(session.get('access_token'))
 
-    j = json.load(resp)
+    j = json.loads(resp.text)
     
     return j['username']
 
