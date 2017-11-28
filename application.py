@@ -25,7 +25,8 @@ def index():
     if access_token is None:
         return redirect(url_for('user_login'))
 
-    resp = FenixRequest.get_person(session.get('access_token'))
+
+    resp = FenixRequest().get_person(session.get('access_token'))
 
     j = json.load(resp)
     
