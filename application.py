@@ -25,7 +25,7 @@ def index():
     if access_token is None:
         return redirect(url_for('user_login'))
 
-    return "Welcome, " + str(session.get['username'])
+    return render_template('index.html', username=session.get('username'))
 
 @application.route('/authorized')
 def user_auth():
