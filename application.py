@@ -7,6 +7,7 @@ from flask import session, request
 import fenixedu
 
 
+
 application = Flask(__name__)
 application.secret_key = "\x8f\xb1q\x8d\x96e\xdd,\xbe]|\xf9\x03r\xdc\xee\xf3\xbf.i\xfd\xbe2\x16"
 
