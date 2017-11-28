@@ -1,5 +1,5 @@
 import urllib2
-import request
+from flask import request
 
 
 class FenixRequest:
