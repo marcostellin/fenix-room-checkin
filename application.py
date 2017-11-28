@@ -8,6 +8,7 @@ import fenixedu
 
 
 application = Flask(__name__)
+application.secret_key = "\x8f\xb1q\x8d\x96e\xdd,\xbe]|\xf9\x03r\xdc\xee\xf3\xbf.i\xfd\xbe2\x16"
 
 application.config['REDIRECT_URI'] = "http://room-checkin.us-west-2.elasticbeanstalk.com/authorized"
 application.config['CLIENT_ID'] = "1132965128044586"
