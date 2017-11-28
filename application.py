@@ -23,8 +23,10 @@ def index():
     access_token = session.get('access_token')
     if access_token is None:
         return redirect(url_for('user_login'))
+
+
     
-    return "Successfull login"
+    return str(session.get('access_token'))
 
 
 @application.route('/authorized')
