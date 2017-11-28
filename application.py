@@ -2,6 +2,7 @@ from flask import Flask
 from flask import render_template
 from flask import Response
 from flask import redirect, url_for
+from make_request import *
 import json
 from flask import session, request
 import fenixedu
@@ -24,9 +25,9 @@ def index():
     if access_token is None:
         return redirect(url_for('user_login'))
 
-
+    json = FenixRequest.get_person(session.get('access_token'))
     
-    return str(session.get('access_token'))
+    return json['username']
 
 
 @application.route('/authorized')

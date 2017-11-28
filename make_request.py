@@ -14,7 +14,7 @@ class FenixRequest:
 
     def get_person(access_token):
 
-        url = self.base_url + "/" + self.api_version + "/" + endpoints["person"]
+        url = self.base_url + "/" + self.api_version + "/" + self.endpoints["person"]
         params = {"access_token" : access_token}
         j = request.get(url, params)
 
