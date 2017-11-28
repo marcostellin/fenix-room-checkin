@@ -25,13 +25,7 @@ def index():
     if access_token is None:
         return redirect(url_for('user_login'))
 
-
-    resp = FenixRequest().get_person(session.get('access_token'))
-
-    j = json.loads(resp.text)
-    
-    return j['username']
-
+    return render_template('index.html', username = session.get['username'])
 
 @application.route('/authorized')
 def user_auth():
@@ -43,7 +37,13 @@ def user_auth():
 
 	client = fenixedu.FenixEduClient(config)
 	user = client.get_user_by_code(code)
+
+    resp = FenixRequest().get_person(user.access_token)
+
+    data = json.loads(resp.text)
+
 	session['access_token'] = user.access_token
+    session['username'] = data['username']
 
 	return redirect(url_for('index'))
 
