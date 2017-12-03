@@ -26,7 +26,7 @@ application.config['DB_ENDPOINT'] = "https://dynamodb.us-west-2.amazonaws.com"
 
 @application.route('/')
 def index():
-    if not is_logged_in(session.get(access_token)):
+    if not is_logged_in(session.get('access_token')):
         return redirect(url_for('login'))
 
     #return render_template('index.html', username=session.get('username'))
@@ -69,7 +69,7 @@ def dashboard():
     #DEBUG ONLY
     #session['username']="ist427286"
 
-    if not is_logged_in(session.get(access_token)):
+    if not is_logged_in(session.get('access_token')):
         return redirect(url_for('login'))
 
     user_in = searchDB(table='Checkins', key_expr=Key('user_id').eq(session.get('username')))
@@ -141,7 +141,7 @@ def checkin(id):
     #DEBUG ONLY
     #username="ist427286"
 
-    if not is_logged_in(session.get(access_token)):
+    if not is_logged_in(session.get('access_token')):
         return redirect(url_for('login'))
 
     room_info = FenixRequest().get_space_id(space_id=id)
