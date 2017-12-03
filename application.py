@@ -139,10 +139,12 @@ def rooms(id):
 def checkin(id):
 
     #DEBUG ONLY
-    #username="ist427286"
+    
 
     if not is_logged_in(session.get('access_token')):
         return redirect(url_for('login'))
+
+    username = session.get('username')
 
     room_info = FenixRequest().get_space_id(space_id=id)
     
