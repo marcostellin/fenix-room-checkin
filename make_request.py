@@ -1,5 +1,6 @@
 import urllib2
 import requests
+import json
 
 
 class FenixRequest:
@@ -11,6 +12,7 @@ class FenixRequest:
 
         self.endpoints = {
                     "person": "person",
+                    "space" : "spaces",
                     }
 
     def get_person(self, access_token):
@@ -19,4 +21,11 @@ class FenixRequest:
         params = {"access_token" : access_token}
         j = requests.get(url, params)
 
-        return j  
+        return json.loads(j.text)  
+
+    def get_space_id(self, space_id):
+
+        url = url = self.base_url + "/" + self.api_version + "/" + self.endpoints["space"] + "/" + space_id
+        j = requests.get(url)
+
+        return json.loads(j.text)

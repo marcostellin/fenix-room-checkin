@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Room Check-In</title>
+</head>
+<body>
+    <h1>Search Results</h1>
+
+    <ul>
+        {% for room in result_set %}
+            <li><a href="{{url_for('rooms', id=room['room_id'])}}">{{room['room_name'].upper()}}</a></li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
