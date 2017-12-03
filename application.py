@@ -75,10 +75,10 @@ def dashboard():
     user_in = searchDB(table='Checkins', key_expr=Key('user_id').eq(session.get('username')))
     
     if not user_in:
-        welcome_msg = 'Welcome %s, you are not checked-in in any room' % session['username']
+        welcome_msg = 'Welcome %s, you are not checked-in in any room' % session.get('username')
         other_users = []
     else:
-        welcome_msg = 'Welcome %s, you are checked-in in room ' % session['username'] + user_in[0]['room_name'].upper()
+        welcome_msg = 'Welcome %s, you are checked-in in room ' % session.get('username') + user_in[0]['room_name'].upper()
         other_users = searchDB(table='Checkins', index_name='room_id', key_expr=Key('room_id').eq(user_in[0]['room_id']))
 
     return render_template('dashboard.html', welcome=welcome_msg, user_list=other_users)
@@ -139,7 +139,7 @@ def rooms(id):
 def checkin(id):
 
     #DEBUG ONLY
-    
+    #username = "ist427286"
 
     if not is_logged_in(session.get('access_token')):
         return redirect(url_for('login'))
@@ -159,7 +159,7 @@ def checkin(id):
     user_in = searchDB(table='Checkins', key_expr=Key('user_id').eq(username))
 
     if user_in:
-        key = {'user_id':username, 'room_id':id}
+        key={'user_id':username}
         deleteDB(table='Checkins', key=key)
 
         new_history_entry={}
@@ -168,6 +168,7 @@ def checkin(id):
         new_history_entry['date_in'] = user_in[0]['date_in']
         new_history_entry['date_out'] = cur_time
         new_history_entry['room_name'] = room_info['name']
+        putDB(table='History', item=new_history_entry)
 
     putDB(table='Checkins', item=new_check_in)
 
@@ -226,10 +227,8 @@ def deleteDB(table, key):
     dynamodb = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url=application.config['DB_ENDPOINT'])
     table = dynamodb.Table(table)
 
-    try:
-        table.delete_item(Key=key)
-    except ClientError:
-        raise
+    response=table.delete_item(Key=key)
+    print(json.dumps(response))
 
 def updateDB(table, key, update_expr, expr_vals):
     dynamodb = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url=application.config['DB_ENDPOINT'])
