@@ -99,6 +99,8 @@ def results():
 
     room_list = mc.get(room_name)
 
+    print(room_list)
+
     if not room_list:
         key = Key('room_initial').eq(room_name[0]) & Key('room_name').begins_with(room_name)
         room_list = json.dumps(searchDB(table='Rooms', key_expr=key))
