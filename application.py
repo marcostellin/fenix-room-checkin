@@ -22,7 +22,7 @@ application.config['CLIENT_SECRET'] = "pUJJ1hK2COuTjwurjP6TiZhgXFEVo+dm5dGivY2b7
 application.config['BASE_URL'] = "https://fenix.tecnico.ulisboa.pt/"
 application.config['DEBUG'] = True
 application.config['DB_ENDPOINT'] = "https://dynamodb.us-west-2.amazonaws.com"
-application.config['MC_ENDPOINT'] = "roomcheckincache.uobgxl.cfg.usw1.cache.amazonaws.com:11211"
+application.config['MC_ENDPOINT'] = "room-checkin.7ravpu.cfg.usw2.cache.amazonaws.com:11211"
 
 
 @application.route('/')
