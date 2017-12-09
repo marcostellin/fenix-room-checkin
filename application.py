@@ -9,7 +9,7 @@ import fenixedu
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 from datetime import datetime
-
+import memcache
 
 
 
@@ -22,6 +22,7 @@ application.config['CLIENT_SECRET'] = "pUJJ1hK2COuTjwurjP6TiZhgXFEVo+dm5dGivY2b7
 application.config['BASE_URL'] = "https://fenix.tecnico.ulisboa.pt/"
 application.config['DEBUG'] = True
 application.config['DB_ENDPOINT'] = "https://dynamodb.us-west-2.amazonaws.com"
+application.config['MC_ENDPOINT'] = "roomcheckincache.uobgxl.cfg.usw1.cache.amazonaws.com:11211"
 
 
 @application.route('/')
@@ -93,12 +94,18 @@ def search():
 def results():
 
     room_name = request.args.get('query').lower()
-    
-    key = Key('room_initial').eq(room_name[0]) & Key('room_name').begins_with(room_name)
-    
-    room_list = searchDB(table='Rooms', key_expr=key)
 
-    return render_template('results.html', result_set=room_list)
+    mc = memcache.Client([application.config['MC_ENDPOINT']], debug=1)
+
+    room_list = mc.get(room_name)
+
+    if not room_list:
+        key = Key('room_initial').eq(room_name[0]) & Key('room_name').begins_with(room_name)
+        room_list = json.dumps(searchDB(table='Rooms', key_expr=key))
+        mc.set(room_name, room_list)
+    
+
+    return render_template('results.html', result_set=json.loads(room_list))
 
 @application.route('/rooms/<id>')
 def rooms(id):
