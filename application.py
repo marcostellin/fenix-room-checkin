@@ -177,7 +177,7 @@ def checkin(id):
         new_history_entry['room_id'] = id
         new_history_entry['date_in'] = user_in[0]['date_in']
         new_history_entry['date_out'] = cur_time
-        new_history_entry['room_name'] = room_info['name']
+        new_history_entry['room_name'] = user_in[0]['room_name']
         putDB(table='History', item=new_history_entry)
 
     putDB(table='Checkins', item=new_check_in)
