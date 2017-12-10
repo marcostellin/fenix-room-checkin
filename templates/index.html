@@ -1,11 +1,67 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
 	<title>Room Check-In</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='index.css') }}">
 </head>
 <body>
+    <!--Fixed Navbar-->
+    <nav class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">Fenix Room CheckIn</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li class="active"><a href="{{url_for('index')}}">Home</a></li>
+            <li><a href="{{url_for('dashboard')}}">Dashboard</a></li>
+          </ul>
+          <ul class="nav navbar-nav navbar-right">
+            <li>
+                {% if not logged %}
+                    <a href="{{url_for('login')}}">Login</a>
+                {% else %}
+                    <a>{{session.get('username')}}</a>
+                {% endif %}
 
-	<h1>Welcome, {{username}}</h1>
+            </li>
+            <li>
+                {% if logged %}
+                    <a href="{{url_for('logout')}}"> Logout </a>
+                {% endif %}
+            </li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row bg">
+            <div class="col center-block text-center">
+                <form action="{{url_for('results')}}" method="GET">
+                    
+                    <label id="search"></label>
+                    <input class="input-lg" type="text" name="query" id="search" placeholder="Search for a Room">
+
+                    <input class="btn btn-primary btn-lg" type="submit" value="Search">
+                </form>
+            </div>
+        </div>
+    </div>
+
 
 </body>
 </html>

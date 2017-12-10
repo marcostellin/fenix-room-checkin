@@ -1,0 +1,31 @@
+body{
+    padding-top: 50px;
+}
+
+html, body{
+    height: 100%;
+
+}
+
+form{
+    margin-top: 40vh;
+}
+
+input[type="text"]{
+    width: 30%;
+}
+
+.container-fluid, .row{
+    height: 100%;
+}
+
+.bg{
+    background-image: url("index_bg.jpg");
+    height: 100%; 
+
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+

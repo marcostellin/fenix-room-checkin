@@ -1,0 +1,29 @@
+body{
+    padding-top: 70px;
+}
+
+html, body{
+    height: 100%;
+
+}
+
+ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+a.list-group-item:hover {
+    background: #006dcc;
+    color: #ffffff;
+}
+
+
+.container-fluid, .row{
+    height: 100%;
+}
+
+
+
+
+

@@ -27,11 +27,12 @@ application.config['MC_ENDPOINT'] = "room-checkin.7ravpu.cfg.usw2.cache.amazonaw
 
 @application.route('/')
 def index():
-    if not is_logged_in(session.get('access_token')):
-        return redirect(url_for('login'))
+    #if not is_logged_in(session.get('access_token')):
+    #    return redirect(url_for('login'))
+    logged_in = is_logged_in(session.get('access_token'))
 
-    #return render_template('index.html', username=session.get('username'))
-    return redirect(url_for('dashboard'))
+    return render_template('index.html', logged=logged_in)
+
 
 @application.route('/authorized')
 def user_auth():
@@ -99,7 +100,7 @@ def results():
 
     room_list = mc.get(room_name)
 
-    print(room_list)
+    #print(room_list)
 
     if not room_list:
         key = Key('room_initial').eq(room_name[0]) & Key('room_name').begins_with(room_name)
@@ -183,6 +184,12 @@ def checkin(id):
 
     return redirect(url_for('dashboard'))
 
+@application.route('/logout')
+def logout():
+    session.pop('username',None)
+    session.pop('access_token',None)
+
+    return redirect(url_for('index'))
 
 
 
@@ -197,9 +204,13 @@ def is_logged_in(access_token):
     data = FenixRequest().get_person(access_token)
 
     if 'error' in data:
+        session.pop('access_token')
+        session.pop('username')
+
         return False
 
     return True
+
 
 
 
