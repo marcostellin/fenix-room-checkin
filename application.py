@@ -10,6 +10,7 @@ import boto3
 from boto3.dynamodb.conditions import Key, Attr
 from datetime import datetime
 import memcache
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 
@@ -34,22 +35,39 @@ def index():
     return render_template('index.html', logged=logged_in)
 
 
-@application.route('/authorized')
+@application.route('/authorized', methods=['GET', 'POST'])
 def user_auth():
-    code = request.args.get('code')
-    config = fenixedu.FenixEduConfiguration(application.config['CLIENT_ID'], 
-											application.config['REDIRECT_URI'],
-											application.config['CLIENT_SECRET'],
-											application.config['BASE_URL'])
+
+    if request.method == 'POST':
+
+        user = request.form.get('user')
+        password = request.form.get('password')
+
+        db_pass = searchDB(table = 'Admins', key_expr = Key('username').eq(user))
+        print(db_pass[0]['password'])
+        print(user)
+        print(password)
+
+        if check_password_hash(db_pass[0]['password'], password):
+
+            return render_template('index.html')
+
+    else:
+
+        code = request.args.get('code')
+        config = fenixedu.FenixEduConfiguration(application.config['CLIENT_ID'], 
+    											application.config['REDIRECT_URI'],
+    											application.config['CLIENT_SECRET'],
+    											application.config['BASE_URL'])
 
 
-    client = fenixedu.FenixEduClient(config)
-    user = client.get_user_by_code(code)
-    data = FenixRequest().get_person(user.access_token)
-    session['access_token'] = user.access_token
-    session['username'] = data['username']
+        client = fenixedu.FenixEduClient(config)
+        user = client.get_user_by_code(code)
+        data = FenixRequest().get_person(user.access_token)
+        session['access_token'] = user.access_token
+        session['username'] = data['username']
 
-    return redirect(url_for('index'))
+        return redirect(url_for('index'))
 
 
 @application.route('/login')
