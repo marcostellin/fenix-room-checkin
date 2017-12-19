@@ -4,7 +4,7 @@ from flask import Response
 from flask import redirect, url_for
 from make_request import *
 import json
-from flask import session, request
+from flask import session, request, jsonify
 import fenixedu
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
@@ -69,21 +69,19 @@ def login():
 def dashboard():
 
     #DEBUG ONLY
-    #session['username']="ist427286"
+    session['username']="ist427286"
 
-    if not is_logged_in(session.get('access_token')):
-        return redirect(url_for('login'))
+    #if not is_logged_in(session.get('access_token')):
+    #    return redirect(url_for('login'))
 
-    user_in = searchDB(table='Checkins', key_expr=Key('user_id').eq(session.get('username')))
+    user_in = getItemDB(table='Checkins', key={'user_id' : session.get('username')})
     
     if not user_in:
-        welcome_msg = 'Welcome %s, you are not checked-in in any room' % session.get('username')
         other_users = []
     else:
-        welcome_msg = 'Welcome %s, you are checked-in in room ' % session.get('username') + user_in[0]['room_name'].upper()
-        other_users = searchDB(table='Checkins', index_name='room_id', key_expr=Key('room_id').eq(user_in[0]['room_id']))
+        other_users = searchDB(table='Checkins', index_name='room_id', key_expr=Key('room_id').eq(user_in['room_id']))
 
-    return render_template('dashboard.html', welcome=welcome_msg, user_list=other_users)
+    return render_template('dashboard.html', user_in=user_in, user_list=other_users)
    
 
 @application.route('/search')
@@ -149,12 +147,12 @@ def rooms(id):
 def checkin(id):
 
     #DEBUG ONLY
-    #username = "ist427286"
+    username = "ist427286"
 
-    if not is_logged_in(session.get('access_token')):
-        return redirect(url_for('login'))
+    #if not is_logged_in(session.get('access_token')):
+    #    return redirect(url_for('login'))
 
-    username = session.get('username')
+    #username = session.get('username')
 
     room_info = FenixRequest().get_space_id(space_id=id)
     
@@ -184,6 +182,35 @@ def checkin(id):
 
     return redirect(url_for('dashboard'))
 
+@application.route('/rooms/<id>/checkout')
+def checkout(id):
+
+    #DEBUG ONLY
+    username = "ist427286"
+
+    #if not is_logged_in(session.get('access_token')):
+    #    return redirect(url_for('login'))
+
+    #username = session.get('username')
+
+    user_in = searchDB(table='Checkins', key_expr=Key('user_id').eq(username))
+    cur_time = datetime.now().isoformat(' ')
+
+    if user_in:
+        key={'user_id':username}
+        deleteDB(table='Checkins', key=key)
+
+        new_history_entry={}
+        new_history_entry['user_id'] = username
+        new_history_entry['room_id'] = id
+        new_history_entry['date_in'] = user_in[0]['date_in']
+        new_history_entry['date_out'] = cur_time
+        new_history_entry['room_name'] = user_in[0]['room_name']
+        putDB(table='History', item=new_history_entry)
+
+    return redirect(url_for('dashboard'))
+
+
 @application.route('/logout')
 def logout():
     session.pop('username',None)
@@ -192,6 +219,52 @@ def logout():
     return redirect(url_for('index'))
 
 
+@application.route('/debug/message')
+def debug_index():
+    if session.get('debug_user') is None:
+        session['debug_user'] = 'testUser'
+        session['debug_admin'] = 'testAdmin'
+
+    return render_template('debug.html')
+
+@application.route('/debug/new_message', methods=['POST'])
+def new_message():
+
+
+    to = session.get('debug_user')
+    fromm = session.get('debug_admin')
+    cur_time = datetime.now().isoformat(' ')
+
+    new_message={}
+    new_message['to'] = to
+    new_message['from'] = fromm
+    new_message['date'] = cur_time
+    new_message['flashed'] = 'F'
+    new_message['content'] = request.form.get('msg')
+
+    putDB(table='Messages', item=new_message)
+
+
+    return redirect(url_for('debug_index'))
+
+@application.route('/debug/get_messages', methods=['GET', 'POST'])
+def get_messages():
+
+    user = session.get('debug_user')
+    messages = searchDB(table='Messages', key_expr=Key('to').eq(user), filter_expr=Attr('flashed').eq('F'))
+
+    if request.method == "GET":
+        
+        return jsonify(messages)
+
+    if request.method == "POST":
+
+        for item in messages:
+            updateDB(table='Messages', key={'to':item['to'], 'date':item['date']}, update_expr='SET flashed = :val', expr_vals={':val': 'T'})
+
+        return 'OK'
+
+    
 
 
 #LOGIN FUNCTIONS
@@ -219,20 +292,33 @@ def is_logged_in(access_token):
 #DATABASE OPERATIONS HELPERS
 
 
-def searchDB(table, key_expr, index_name=None):
+def searchDB(table, key_expr, index_name=None, filter_expr=None):
 
     dynamodb = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url=application.config['DB_ENDPOINT'])
     table = dynamodb.Table(table)
 
-    if index_name == None:
-        result_set = table.query(
-            KeyConditionExpression=key_expr,
-        )
+    if not index_name:
+        if not filter_expr:
+            result_set = table.query(
+                KeyConditionExpression=key_expr,
+            )
+        else:
+            result_set = table.query(
+                KeyConditionExpression=key_expr,
+                FilterExpression=filter_expr
+            )
     else:
-        result_set = table.query(
-            IndexName=index_name,
-            KeyConditionExpression=key_expr,
-        )
+        if not filter_expr:
+            result_set = table.query(
+                IndexName=index_name,
+                KeyConditionExpression=key_expr,
+            )
+        else:
+            result_set = table.query(
+                IndexName=index_name,
+                KeyConditionExpression=key_expr,
+                FilterExpression=filter_expr
+            )
 
     return result_set['Items']
 
@@ -248,7 +334,6 @@ def deleteDB(table, key):
     table = dynamodb.Table(table)
 
     response=table.delete_item(Key=key)
-    print(json.dumps(response))
 
 def updateDB(table, key, update_expr, expr_vals):
     dynamodb = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url=application.config['DB_ENDPOINT'])
@@ -258,4 +343,17 @@ def updateDB(table, key, update_expr, expr_vals):
                       UpdateExpression=update_expr,
                       ExpressionAttributeValues=expr_vals,  
                      )
+
+def getItemDB(table, key):
+    dynamodb = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url=application.config['DB_ENDPOINT'])
+    table = dynamodb.Table(table)
+
+    result = table.get_item(Key=key)
+
+    if 'Item' in result:
+        return result['Item']
+    else:
+        return {}
+
+    #return result['Item']
 

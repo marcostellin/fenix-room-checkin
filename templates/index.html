@@ -8,6 +8,9 @@
 	<title>Room Check-In</title>
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.17.0/jquery.validate.min.js"></script>
+    <script src="{{ url_for('static', filename='validate.js') }}"></script>
 
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='index.css') }}">
 </head>
@@ -22,7 +25,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="#">Fenix Room CheckIn</a>
+          <a class="navbar-brand" href="{{url_for('index')}}">Fenix Room CheckIn</a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
@@ -38,11 +41,11 @@
                 {% endif %}
 
             </li>
-            <li>
                 {% if logged %}
+                <li>
                     <a href="{{url_for('logout')}}"> Logout </a>
+                </li>
                 {% endif %}
-            </li>
           </ul>
         </div><!--/.nav-collapse -->
       </div>
@@ -51,10 +54,10 @@
     <div class="container-fluid">
         <div class="row bg">
             <div class="col center-block text-center">
-                <form action="{{url_for('results')}}" method="GET">
+                <form action="{{url_for('results')}}" method="GET" id="search_fm">
                     
                     <label id="search"></label>
-                    <input class="input-lg" type="text" name="query" id="search" placeholder="Search for a Room">
+                    <input class="input-lg" type="text" name="query" id="search" placeholder="Search for a Room" required>
 
                     <input class="btn btn-primary btn-lg" type="submit" value="Search">
                 </form>

@@ -42,21 +42,87 @@
 
     
 
-    <div class="container-fluid">
+<!--     <div class="container-fluid">
         <div class="row">
             {% for room in result_set %}
-                {% if (loop.index0 % (loop.length // 4)) == 0 and loop.revindex0 > (loop.length // 4) %}
+                {% if loop.length >= 4 %}
+                    {% if (loop.index0 % (loop.length // 4)) == 0 and loop.revindex0 > (loop.length // 4) %}
+                        <div class="col-sm-3 center-block text-center">
+                    {% endif %}
+
+                        <a class="list-group-item" href="{{url_for('rooms', id=room['room_id'])}}">{{room['room_name'].upper()}}</a>
+
+                    {% if (loop.length // 4) > 1 and (loop.index0+1) % (loop.length // 4) == 0 and loop.revindex0 > (loop.length // 4)%}
+                        </div>
+                    {% elif loop.length // 4 == 1 and loop.index0 < 2 %}
+                        </div>
+                    {% elif loop.last %}
+                        </div>
+                    {% endif %}
+                {% else %}
                     <div class="col-sm-3 center-block text-center">
-                {% endif %}
-
-                    <a class="list-group-item" href="{{url_for('rooms', id=room['room_id'])}}">{{room['room_name'].upper()}}</a>
-
-                {% if ((loop.index0+1) % (loop.length // 4)) == 0 and loop.revindex0 > (loop.length // 4)%}
-                    </div>
-                {% elif loop.last %}
+                        <a class="list-group-item" href="{{url_for('rooms', id=room['room_id'])}}">{{room['room_name'].upper()}}</a>
                     </div>
                 {% endif %}
             {% endfor %}
+
+            {% if not result_set %}
+                <div class="col center-block text-center">
+                    No Rooms found.
+                </div>
+            {% endif %}
+        </div>
+    </div> -->
+
+
+    <div class="container-fluid">
+        <div class="row">
+
+            <div class="col-sm-3 center-block text-center">
+
+                    {% for room in result_set[0:result_set | length // 4] %}
+                        <a class="list-group-item" href="{{url_for('rooms', id=room['room_id'])}}">{{room['room_name'].upper()}}</a>
+                    {% endfor %}
+
+                    {% if (result_set | length % 4 >=1) %}
+                        <a class="list-group-item" href="{{url_for('rooms', id=result_set[-1]['room_id'])}}">{{result_set[-1]['room_name'].upper()}}</a>
+                    {% endif %}
+
+            </div>
+
+            <div class="col-sm-3 center-block text-center">
+
+                    {% for room in result_set[result_set | length // 4 : 2*(result_set | length // 4)] %}
+                        <a class="list-group-item" href="{{url_for('rooms', id=room['room_id'])}}">{{room['room_name'].upper()}}</a>
+                    {% endfor %}
+
+                    {% if (result_set | length % 4 >=2) %}
+                        <a class="list-group-item" href="{{url_for('rooms', id=result_set[-2]['room_id'])}}">{{result_set[-2]['room_name'].upper()}}</a>
+                    {% endif %}
+
+            </div>
+
+            <div class="col-sm-3 center-block text-center">
+
+                    {% for room in result_set[2*(result_set | length // 4) : 3*(result_set | length // 4)] %}
+                        <a class="list-group-item" href="{{url_for('rooms', id=room['room_id'])}}">{{room['room_name'].upper()}}</a>
+                    {% endfor %}
+
+                    {% if (result_set | length % 4 >=3) %}
+                        <a class="list-group-item" href="{{url_for('rooms', id=result_set[-3]['room_id'])}}">{{result_set[-3]['room_name'].upper()}}</a>
+                    {% endif %}
+
+            </div>
+
+
+            <div class="col-sm-3 center-block text-center">
+
+                {% for room in result_set[3*(result_set | length // 4):4*(result_set | length // 4)] %}
+                    <a class="list-group-item" href="{{url_for('rooms', id=room['room_id'])}}">{{room['room_name'].upper()}}</a>
+                {% endfor %}
+
+            </div>
+
         </div>
     </div>
 
