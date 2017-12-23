@@ -12,7 +12,6 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='dashboard.css') }}">
 </head>
 <body>
-    <!--Fixed Navbar-->
     <nav class="navbar navbar-default navbar-fixed-top">
       <div class="container">
         <div class="navbar-header">
@@ -31,20 +30,13 @@
           </ul>
           <ul class="nav navbar-nav navbar-right">
             <li>
-                {% if not logged %}
-                    <a href="{{url_for('login')}}">Login</a>
-                {% else %}
                     <a>{{session.get('username')}}</a>
-                {% endif %}
-
             </li>
             <li>
-                {% if logged %}
                     <a href="{{url_for('logout')}}"> Logout </a>
-                {% endif %}
             </li>
           </ul>
-        </div><!--/.nav-collapse -->
+        </div>
       </div>
     </nav>
 
@@ -70,6 +62,7 @@
         </div>
 
         <div class="row">
+            
             <div class="col-sm-12 text-center">
                 <a class="btn btn-primary" href="{{url_for('index')}}">New Checkin</a>
                 {% if user_in %}

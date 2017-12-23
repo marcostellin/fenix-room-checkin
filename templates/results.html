@@ -13,7 +13,6 @@
 </head>
 <body>
 
-    <!--Fixed Navbar-->
     <nav class="navbar navbar-default navbar-fixed-top">
       <div class="container">
         <div class="navbar-header">
@@ -23,56 +22,30 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="#">Fenix Room CheckIn</a>
+          <a class="navbar-brand" href="{{url_for('index')}}">Fenix Room CheckIn</a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
-            <li><a href="{{url_for('index')}}">Home</a></li>
+            <li class="active"><a href="{{url_for('index')}}">Home</a></li>
             <li><a href="{{url_for('dashboard')}}">Dashboard</a></li>
           </ul>
           <ul class="nav navbar-nav navbar-right">
             <li>
-                <a href="{{url_for('login')}}">Login</a>
+                {% if not user_logged or not admin_logged %}
+                    <a href="{{url_for('login')}}">Login</a>
+                {% else %}
+                    <a>{{session.get('username')}}</a>
+                {% endif %}
+
+            </li>
+                {% if user_logged or admin_logged %}  
+                    <a href="{{url_for('logout')}}"> Logout </a>
+                {% endif %}
             </li>
           </ul>
-        </div><!--/.nav-collapse -->
+        </div>
       </div>
     </nav>
-
-
-    
-
-<!--     <div class="container-fluid">
-        <div class="row">
-            {% for room in result_set %}
-                {% if loop.length >= 4 %}
-                    {% if (loop.index0 % (loop.length // 4)) == 0 and loop.revindex0 > (loop.length // 4) %}
-                        <div class="col-sm-3 center-block text-center">
-                    {% endif %}
-
-                        <a class="list-group-item" href="{{url_for('rooms', id=room['room_id'])}}">{{room['room_name'].upper()}}</a>
-
-                    {% if (loop.length // 4) > 1 and (loop.index0+1) % (loop.length // 4) == 0 and loop.revindex0 > (loop.length // 4)%}
-                        </div>
-                    {% elif loop.length // 4 == 1 and loop.index0 < 2 %}
-                        </div>
-                    {% elif loop.last %}
-                        </div>
-                    {% endif %}
-                {% else %}
-                    <div class="col-sm-3 center-block text-center">
-                        <a class="list-group-item" href="{{url_for('rooms', id=room['room_id'])}}">{{room['room_name'].upper()}}</a>
-                    </div>
-                {% endif %}
-            {% endfor %}
-
-            {% if not result_set %}
-                <div class="col center-block text-center">
-                    No Rooms found.
-                </div>
-            {% endif %}
-        </div>
-    </div> -->
 
 
     <div class="container-fluid">

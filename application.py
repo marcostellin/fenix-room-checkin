@@ -2,14 +2,18 @@ from flask import Flask
 from flask import render_template
 from flask import Response
 from flask import redirect, url_for
+from flask import session, request, jsonify
+
 from make_request import *
 import json
-from flask import session, request, jsonify
 import fenixedu
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 from datetime import datetime
 import memcache
+from werkzeug.security import generate_password_hash, check_password_hash
+import os
+import dateutil.parser
 
 
 
@@ -27,14 +31,14 @@ application.config['MC_ENDPOINT'] = "room-checkin.7ravpu.cfg.usw2.cache.amazonaw
 
 @application.route('/')
 def index():
-    #if not is_logged_in(session.get('access_token')):
-    #    return redirect(url_for('login'))
-    logged_in = is_logged_in(session.get('access_token'))
 
-    return render_template('index.html', logged=logged_in)
+    user_logged_in = is_logged_in(session.get('access_token'))
+    admin_logged_in = is_admin_logged_in(session.get('username'), session.get('access_token'))
+
+    return render_template('index.html', user_logged=user_logged_in, admin_logged=admin_logged_in)
 
 
-@application.route('/authorized')
+@application.route('/authorized')  #CHANGE URL TO ADMIN STYLE
 def user_auth():
     code = request.args.get('code')
     config = fenixedu.FenixEduConfiguration(application.config['CLIENT_ID'], 
@@ -50,6 +54,38 @@ def user_auth():
     session['username'] = data['username']
 
     return redirect(url_for('index'))
+
+@application.route('/admin/authorized' , methods=['POST'])
+def admin_auth():
+
+    username = request.form.get('user')
+    password = request.form.get('password')
+
+    admin_entry = getItemDB(table = 'Admins', key={'username' : username})
+
+    if admin_entry and check_password_hash(admin_entry['password'], password):
+
+        if is_admin_expired(admin_entry['expires']):
+
+            new_access_token = os.urandom(20)
+            updateDB(table='Admins', 
+                     key={'username':username}, 
+                     update_expr='SET access_token = :val0, expires = :val1', 
+                     expr_vals={':val0': new_access_token, ':val1': (datetime.now() + timedelta(days=1)).isoformat(' ')}
+                     )
+
+
+            session['access_token'] = new_access_token
+            session['username'] = username
+
+        else:
+
+            session['access_token'] = admin_entry['access_token']
+            session['username'] = admin_entry['username']
+
+        return render_template('login_status.html', success=True)
+
+    return render_template('login_status.html', success=False)
 
 
 @application.route('/login')
@@ -69,10 +105,10 @@ def login():
 def dashboard():
 
     #DEBUG ONLY
-    session['username']="ist427286"
+    #session['username']='ist427286'
 
-    #if not is_logged_in(session.get('access_token')):
-    #    return redirect(url_for('login'))
+    if not is_logged_in(session.get('access_token')) or not is_admin_logged_in(session.get('username'), session.get('access_token')):
+        return redirect(url_for('login'))
 
     user_in = getItemDB(table='Checkins', key={'user_id' : session.get('username')})
     
@@ -84,13 +120,11 @@ def dashboard():
     return render_template('dashboard.html', user_in=user_in, user_list=other_users)
    
 
-@application.route('/search')
-def search():
-    
-    return render_template('search.html')
-
 @application.route('/results')
 def results():
+
+    user_logged_in = is_logged_in(session.get('access_token'))
+    admin_logged_in = is_admin_logged_in(session.get('username'), session.get('access_token'))
 
     room_name = request.args.get('query').lower()
 
@@ -98,19 +132,21 @@ def results():
 
     room_list = mc.get(room_name)
 
-    #print(room_list)
-
     if not room_list:
         key = Key('room_initial').eq(room_name[0]) & Key('room_name').begins_with(room_name)
         room_list = json.dumps(searchDB(table='Rooms', key_expr=key))
         mc.set(room_name, room_list)
     
 
-    return render_template('results.html', result_set=json.loads(room_list))
+    return render_template('results.html', result_set=json.loads(room_list), user_logged=user_logged_in, admin_logged=admin_logged_in)
 
 @application.route('/rooms/<id>')
 def rooms(id):
     
+    user_logged_in = is_logged_in(session.get('access_token'))
+    admin_logged_in = is_admin_logged_in(session.get('username'), session.get('access_token'))
+
+
     request = FenixRequest()
     data = request.get_space_id(space_id=id)
     room_info={}
@@ -136,23 +172,26 @@ def rooms(id):
 
 
 
+
     return render_template('room_info.html', room_name=room_info['room_name'], 
                                              building_name=room_info['building_name'], 
                                              floor_name=room_info['floor_name'],
                                              campus_name=room_info['campus_name'],
-                                             url=url_for('checkin', id=id))
+                                             url=url_for('checkin', id=id),
+                                             user_logged=user_logged_in,
+                                             admin_logged=admin_logged_in)
 
 
 @application.route('/rooms/<id>/checkin')
 def checkin(id):
 
     #DEBUG ONLY
-    username = "ist427286"
+    #username = "ist427286"
 
-    #if not is_logged_in(session.get('access_token')):
-    #    return redirect(url_for('login'))
+    if not is_logged_in(session.get('access_token')):
+        return redirect(url_for('login'))
 
-    #username = session.get('username')
+    username = session.get('username')
 
     room_info = FenixRequest().get_space_id(space_id=id)
     
@@ -186,12 +225,12 @@ def checkin(id):
 def checkout(id):
 
     #DEBUG ONLY
-    username = "ist427286"
+    #username = "ist427286"
 
-    #if not is_logged_in(session.get('access_token')):
-    #    return redirect(url_for('login'))
+    if not is_logged_in(session.get('access_token')):
+        return redirect(url_for('login'))
 
-    #username = session.get('username')
+    username = session.get('username')
 
     user_in = searchDB(table='Checkins', key_expr=Key('user_id').eq(username))
     cur_time = datetime.now().isoformat(' ')
@@ -266,7 +305,6 @@ def get_messages():
 
     
 
-
 #LOGIN FUNCTIONS
 
 def is_logged_in(access_token):
@@ -283,6 +321,34 @@ def is_logged_in(access_token):
         return False
 
     return True
+
+def is_admin_expired(exp_date):
+
+    cur_time = datetime.now()
+    expires_in = dateutil.parser.parse(exp_date)
+
+    return (expires_in-cur_time).seconds < 0
+
+def is_admin_logged_in(username, access_token):
+
+    if access_token is None:
+        return False
+
+    admin_entry = getItemDB(table = 'Admins', key={'username' : username})
+
+    if not admin_entry:
+        raise ValueError('Provided username not in DB')
+    
+    if admin_entry['access_token'] != access_token:
+        return False
+
+    if is_admin_expired(admin_entry['expires']):
+        return False
+
+    return True
+
+
+
 
 
 

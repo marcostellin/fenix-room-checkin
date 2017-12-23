@@ -34,18 +34,17 @@
           </ul>
           <ul class="nav navbar-nav navbar-right">
             <li>
-                {% if not logged %}
+                {% if not user_logged or not admin_logged %}
                     <a href="{{url_for('login')}}">Login</a>
                 {% else %}
                     <a>{{session.get('username')}}</a>
                 {% endif %}
 
             </li>
-                {% if logged %}
-                <li>
+                {% if user_logged or admin_logged %}  
                     <a href="{{url_for('logout')}}"> Logout </a>
-                </li>
                 {% endif %}
+            </li>
           </ul>
         </div><!--/.nav-collapse -->
       </div>
