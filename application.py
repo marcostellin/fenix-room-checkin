@@ -331,15 +331,21 @@ def is_admin_expired(exp_date):
 
 def is_admin_logged_in(username, access_token):
 
+    print(username)
+    print(access_token)
+
     if access_token is None:
         return False
 
     admin_entry = getItemDB(table = 'Admins', key={'username' : username})
 
+    print(admin_entry)
+
     if not admin_entry:
         raise ValueError('Provided username not in DB')
     
     if admin_entry['access_token'] != access_token:
+        print(admin_entry['access_token'])
         return False
 
     if is_admin_expired(admin_entry['expires']):
