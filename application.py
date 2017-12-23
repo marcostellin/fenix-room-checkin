@@ -176,7 +176,8 @@ def rooms(id):
         data = request.get_space_id(space_id=data['parentSpace']['id'])
 
 
-
+    user_in = searchDB(table='Checkins', key_expr=Key('room_id').eq(id), index_name='room_id')
+    prev_history = searchDB(table='History', key_expr=Key('room_id').eq(id), index_name='room_id-index')
 
     return render_template('room_info.html', room_name=room_info['room_name'], 
                                              building_name=room_info['building_name'], 
@@ -184,7 +185,10 @@ def rooms(id):
                                              campus_name=room_info['campus_name'],
                                              url=url_for('checkin', id=id),
                                              user_logged=user_logged_in,
-                                             admin_logged=admin_logged_in)
+                                             admin_logged=admin_logged_in,
+                                             user_in=user_in,
+                                             prev_history=prev_history
+                                             )
 
 
 @application.route('/rooms/<id>/checkin')

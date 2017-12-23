@@ -58,6 +58,7 @@
             <div class="col center-block text-center">
                 <h1> Room {{room_name.upper()}}</h1>
             </div>
+        </div>
 
         <div class="row">
             <div class="col-sm-4">
@@ -84,13 +85,58 @@
 
         </div>
 
+        {% if admin_logged %}
+
+
         <div class="row">
             <div class="col center-block text-center">
-                
+
+                 <h3>Checked-In Users</h3>
+
+                 <ul class="list-group">
+
+                    {% for user in user_in %}
+                        <li class="list-group-item">{{user['user_id']}}  <a  href="#">Send message</a></li>
+                    {% endfor %}
+
+                 </ul>
+
             </div>
         </div>
 
+        <div class="row">
+            <div class="col center-block text-center">
+
+                 <h3>History</h3>
+
+                 <div class="table-responsive">
+                      <table style="table-layout: fixed" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th style="text-align: center"> Username </th>
+                                <th style="text-align: center"> Check-In </th>
+                                <th style="text-align: center"> Check-Out </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in prev_history %}
+                            <tr>
+                                <td>{{entry['user_id']}}</td>
+                                <td>{{entry['date_in']}}</td>
+                                <td>{{entry['date_out']}}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                      </table>
+                </div> 
+
+            </div>
         </div>
+
+        {% endif %}
+
+
+
     </div>
 
     
