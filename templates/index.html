@@ -42,11 +42,13 @@
 
             </li>
                 {% if user_logged or admin_logged %}  
+                <li>
                     <a href="{{url_for('logout')}}"> Logout </a>
+                </li>
                 {% endif %}
-            </li>
+            
           </ul>
-        </div><!--/.nav-collapse -->
+        </div>
       </div>
     </nav>
 

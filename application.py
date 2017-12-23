@@ -9,7 +9,7 @@ import json
 import fenixedu
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
-from datetime import datetime
+from datetime import datetime, timedelta
 import memcache
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
@@ -29,11 +29,18 @@ application.config['DB_ENDPOINT'] = "https://dynamodb.us-west-2.amazonaws.com"
 application.config['MC_ENDPOINT'] = "room-checkin.7ravpu.cfg.usw2.cache.amazonaws.com:11211"
 
 
+# @application.before_request
+# def make_session_permanent():
+#     session.permanent = True
+#     application.permanent_session_lifetime = timedelta(days=1)
+
+
 @application.route('/')
 def index():
 
     user_logged_in = is_logged_in(session.get('access_token'))
     admin_logged_in = is_admin_logged_in(session.get('username'), session.get('access_token'))
+
 
     return render_template('index.html', user_logged=user_logged_in, admin_logged=admin_logged_in)
 
@@ -65,6 +72,9 @@ def admin_auth():
 
     if admin_entry and check_password_hash(admin_entry['password'], password):
 
+        session['access_token'] = admin_entry['access_token']
+        session['username'] = admin_entry['username']
+
         if is_admin_expired(admin_entry['expires']):
 
             new_access_token = os.urandom(20)
@@ -73,15 +83,8 @@ def admin_auth():
                      update_expr='SET access_token = :val0, expires = :val1', 
                      expr_vals={':val0': new_access_token, ':val1': (datetime.now() + timedelta(days=1)).isoformat(' ')}
                      )
-
-
             session['access_token'] = new_access_token
             session['username'] = username
-
-        else:
-
-            session['access_token'] = admin_entry['access_token']
-            session['username'] = admin_entry['username']
 
         return render_template('login_status.html', success=True)
 
@@ -107,7 +110,9 @@ def dashboard():
     #DEBUG ONLY
     #session['username']='ist427286'
 
-    if not is_logged_in(session.get('access_token')) or not is_admin_logged_in(session.get('username'), session.get('access_token')):
+    if not is_logged_in(session.get('access_token')) and not is_admin_logged_in(session.get('username'), session.get('access_token')):
+        session.pop('username', None)
+        session.pop('access_token', None)
         return redirect(url_for('login'))
 
     user_in = getItemDB(table='Checkins', key={'user_id' : session.get('username')})
@@ -189,6 +194,8 @@ def checkin(id):
     #username = "ist427286"
 
     if not is_logged_in(session.get('access_token')):
+        session.pop('username', None)
+        session.pop('access_token', None)
         return redirect(url_for('login'))
 
     username = session.get('username')
@@ -228,6 +235,8 @@ def checkout(id):
     #username = "ist427286"
 
     if not is_logged_in(session.get('access_token')):
+        session.pop('username', None)
+        session.pop('access_token', None)
         return redirect(url_for('login'))
 
     username = session.get('username')
@@ -315,8 +324,6 @@ def is_logged_in(access_token):
     data = FenixRequest().get_person(access_token)
 
     if 'error' in data:
-        session.pop('access_token')
-        session.pop('username')
 
         return False
 
@@ -331,18 +338,13 @@ def is_admin_expired(exp_date):
 
 def is_admin_logged_in(username, access_token):
 
-    print(username)
-    print(access_token)
-
     if access_token is None:
         return False
 
     admin_entry = getItemDB(table = 'Admins', key={'username' : username})
 
-    print(admin_entry)
-
     if not admin_entry:
-        raise ValueError('Provided username not in DB')
+        return False
     
     if admin_entry['access_token'] != access_token:
         print(admin_entry['access_token'])

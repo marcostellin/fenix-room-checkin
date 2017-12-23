@@ -13,6 +13,7 @@
 </head>
 <body>
 
+    <!--Fixed Navbar-->
     <nav class="navbar navbar-default navbar-fixed-top">
       <div class="container">
         <div class="navbar-header">
@@ -39,9 +40,11 @@
 
             </li>
                 {% if user_logged or admin_logged %}  
+                <li>
                     <a href="{{url_for('logout')}}"> Logout </a>
+                </li>
                 {% endif %}
-            </li>
+            
           </ul>
         </div>
       </div>
