@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 import memcache
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+from base64 import b64encode
 import dateutil.parser
 
 
@@ -77,7 +78,7 @@ def admin_auth():
 
         if is_admin_expired(admin_entry['expires']):
 
-            new_access_token = os.urandom(20)
+            new_access_token = b64encode(os.urandom(64)).decode('utf-8')
             updateDB(table='Admins', 
                      key={'username':username}, 
                      update_expr='SET access_token = :val0, expires = :val1', 
@@ -115,14 +116,33 @@ def dashboard():
         session.pop('access_token', None)
         return redirect(url_for('login'))
 
-    user_in = getItemDB(table='Checkins', key={'user_id' : session.get('username')})
-    
-    if not user_in:
-        other_users = []
-    else:
-        other_users = searchDB(table='Checkins', index_name='room_id', key_expr=Key('room_id').eq(user_in['room_id']))
+    user_logged = is_logged_in(session.get('access_token'))
+    admin_logged = is_admin_logged_in(session.get('username'), session.get('access_token'))
 
-    return render_template('dashboard.html', user_in=user_in, user_list=other_users)
+    if user_logged:
+
+        user_in = getItemDB(table='Checkins', key={'user_id' : session.get('username')})
+        
+        if not user_in:
+            other_users = []
+        else:
+            other_users = searchDB(table='Checkins', index_name='room_id', key_expr=Key('room_id').eq(user_in['room_id']))
+
+        return render_template('dashboard.html', 
+                                user_in=user_in, 
+                                user_list=other_users, 
+                                user_logged=user_logged, 
+                                admin_logged=admin_logged)
+    if admin_logged:
+
+        checkin_list = scanDB(table='Checkins')
+    
+        return render_template('dashboard.html', 
+                                user_logged=user_logged, 
+                                admin_logged=admin_logged, 
+                                checkin_list=checkin_list)
+
+    return redirect(url_for('login'))
    
 
 @application.route('/results')
@@ -270,6 +290,57 @@ def logout():
 
     return redirect(url_for('index'))
 
+@application.route('/user/<username>/new-message', methods=['POST'])
+def new_message(username):
+
+    if not is_admin_logged_in(session.get('username'), session.get('access_token')):
+        session.pop('username', None)
+        session.pop('access_token', None)
+        return redirect(url_for('login'))
+
+    to = username
+    sender = session.get('username')
+    cur_time = datetime.now().isoformat(' ')
+
+    new_message={}
+    new_message['to'] = to
+    new_message['from'] = sender
+    new_message['date'] = cur_time
+    new_message['flashed'] = 'F'
+    new_message['read'] = 'F'
+    new_message['content'] = request.form.get('msg')
+
+    putDB(table='Messages', item=new_message)
+
+
+    return redirect(url_for('index'))
+
+@application.route('/user/<username>/message')
+def write_msg(username):
+
+    if not is_admin_logged_in(session.get('username'), session.get('access_token')):
+        session.pop('username', None)
+        session.pop('access_token', None)
+        return redirect(url_for('login'))
+
+    return render_template('send_message.html', username=username)
+
+
+@application.route('/user/<username>/message-list')
+def msg_list(username):
+
+    if not is_logged_in(session.get('access_token')):
+        session.pop('username', None)
+        session.pop('access_token', None)
+        return redirect(url_for('login'))
+
+    user_logged = is_logged_in(session.get('access_token'))
+
+    msg_list = searchDB(table='Messages', key_expr=Key('to').eq(username))
+
+    return render_template('message_list.html', msg_list=msg_list, user_logged=user_logged)
+
+
 
 @application.route('/debug/message')
 def debug_index():
@@ -279,25 +350,25 @@ def debug_index():
 
     return render_template('debug.html')
 
-@application.route('/debug/new_message', methods=['POST'])
-def new_message():
+# @application.route('/debug/new_message', methods=['POST'])
+# def new_message():
 
 
-    to = session.get('debug_user')
-    fromm = session.get('debug_admin')
-    cur_time = datetime.now().isoformat(' ')
+#     to = session.get('debug_user')
+#     fromm = session.get('debug_admin')
+#     cur_time = datetime.now().isoformat(' ')
 
-    new_message={}
-    new_message['to'] = to
-    new_message['from'] = fromm
-    new_message['date'] = cur_time
-    new_message['flashed'] = 'F'
-    new_message['content'] = request.form.get('msg')
+#     new_message={}
+#     new_message['to'] = to
+#     new_message['from'] = fromm
+#     new_message['date'] = cur_time
+#     new_message['flashed'] = 'F'
+#     new_message['content'] = request.form.get('msg')
 
-    putDB(table='Messages', item=new_message)
+#     putDB(table='Messages', item=new_message)
 
 
-    return redirect(url_for('debug_index'))
+#     return redirect(url_for('debug_index'))
 
 @application.route('/debug/get_messages', methods=['GET', 'POST'])
 def get_messages():
@@ -338,7 +409,12 @@ def is_admin_expired(exp_date):
     cur_time = datetime.now()
     expires_in = dateutil.parser.parse(exp_date)
 
-    return (expires_in-cur_time).seconds < 0
+    print(cur_time)
+    print(expires_in)
+    print(expires_in-cur_time)
+    print((expires_in-cur_time).days)
+
+    return (expires_in-cur_time).days < 0
 
 def is_admin_logged_in(username, access_token):
 
@@ -412,6 +488,14 @@ def deleteDB(table, key):
     table = dynamodb.Table(table)
 
     response=table.delete_item(Key=key)
+
+def scanDB(table):
+    dynamodb = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url=application.config['DB_ENDPOINT'])
+    table = dynamodb.Table(table)
+
+    result_set=table.scan()
+
+    return result_set['Items']
 
 def updateDB(table, key, update_expr, expr_vals):
     dynamodb = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url=application.config['DB_ENDPOINT'])

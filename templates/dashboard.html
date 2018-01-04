@@ -46,6 +46,8 @@
                     <h1>Dashboard</h1>
             </div>
         </div>
+
+        {% if user_logged %}
         <div class="row">
             <div class="col-sm-12 text-center">
                 {% if user_in %}
@@ -75,6 +77,43 @@
     </div>
 
     <a href="{{url_for('index')}}">New Check-In</a>
+
+    {% endif %}
+
+    {% if admin_logged %}
+
+    <div class="row">
+        <div class="col center-block text-center">
+
+            <h3>Checked-in users</h3>
+
+            <div class="table-responsive">
+                    <table style="table-layout: fixed" class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th style="text-align: center"> Username </th>
+                            <th style="text-align: center"> Check-in</th>
+                            <th style="text-align: center"> Room </th>
+                            <th style="text-align: center"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in checkin_list %}
+                        <tr>
+                            <td>{{entry['user_id']}}</td>
+                            <td>{{entry['date_in']}}</td>
+                            <td><a href="{{url_for('rooms', id=entry['room_id'])}}">{{entry['room_name']}}</a></td>
+                            <td><a href="{{url_for('write_msg', username=entry['user_id'])}}">Send message</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div> 
+
+        </div>
+    </div>
+
+    {% endif %}
     
 </body>
 </html>

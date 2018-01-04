@@ -33,14 +33,14 @@
           </ul>
           <ul class="nav navbar-nav navbar-right">
             <li>
-                {% if not user_logged and not admin_logged %}
+                {% if not user_logged %}
                     <a href="{{url_for('login')}}">Login</a>
                 {% else %}
                     <a>{{session.get('username')}}</a>
                 {% endif %}
 
             </li>
-                {% if user_logged or admin_logged %}  
+                {% if user_logged %}  
                 <li>
                     <a href="{{url_for('logout')}}"> Logout </a>
                 </li>
@@ -55,88 +55,37 @@
 
     <div class="container-fluid">
         <div class="row">
-            <div class="col center-block text-center">
-                <h1> Room {{room_name.upper()}}</h1>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-sm-4">
-                <div class="thumbnail thumbnail-left">
-                        {{building_name}}
-                </div>
-            </div>
-
-            <div class="col-sm-4">
-                <div class="thumbnail">
-                        Floor {{floor_name}}
-                </div>
-
-                {% if not admin_logged %}
-                    <a class="btn btn-primary btn-lg btn-block" href="{{url}}">Check-In</a>
-                {% endif %}
-            </div>
-
-            <div class="col-sm-4">
-                <div class="thumbnail thumbnail-right">
-                        {{campus_name}}
-                </div>
-            </div>
-
-        </div>
-
-        {% if admin_logged %}
-
-
-        <div class="row">
-            <div class="col center-block text-center">
-
-                 <h3>Checked-In Users</h3>
-
-                 <ul class="list-group">
-
-                    {% for user in user_in %}
-                        <li class="list-group-item">{{user['user_id']}}  <a href="{{url_for('write_msg', username=user['user_id'])}}">Send message</a></li>
-                    {% endfor %}
-
-                 </ul>
-
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col center-block text-center">
-
-                 <h3>History</h3>
-
+             <div class="col center-block text-center"> 
+                  
+                 {% if msg_list %}   
+                 <h3>Messages</h3>
+                 
                  <div class="table-responsive">
                       <table style="table-layout: fixed" class="table table-striped">
                         <thead>
                             <tr>
-                                <th style="text-align: center"> Username </th>
-                                <th style="text-align: center"> Check-In </th>
-                                <th style="text-align: center"> Check-Out </th>
+                                <th style="text-align: center"> Sender </th>
+                                <th style="text-align: center"> Date </th>
+                                <th style="text-align: center"> Content </th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for entry in prev_history %}
+                            {% for entry in msg_list %}
                             <tr>
-                                <td>{{entry['user_id']}}</td>
-                                <td>{{entry['date_in']}}</td>
-                                <td>{{entry['date_out']}}</td>
+                                <td>{{entry['from']}}</td>
+                                <td>{{entry['date']}}</td>
+                                <td>{{entry['content']}}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                       </table>
                 </div> 
 
+                {% else %}
+                    <h3>No messages</h3>
+                {% endif %}
             </div>
         </div>
-
-        {% endif %}
-
-
-
     </div>
 
     
