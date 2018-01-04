@@ -20,7 +20,7 @@
  
             $.getJSON("/user/get_messages", function(resp){
                 for (var i=0; i<resp.length; i++){
-                    $(".messages").notify(resp[i]["content"], "info");
+                    $("#messages").notify(resp[i]["content"], "info");
                 }
 
                 $.post("/user/get_messages", {read:"True"});
