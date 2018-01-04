@@ -13,6 +13,23 @@
     <script src="{{ url_for('static', filename='validate.js') }}"></script>
 
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='index.css') }}">
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+ 
+            $.getJSON("/debug/get_messages", function(resp){
+                for (var i=0; i<resp.length; i++){
+                    $.notify(resp[i]["content"], "info");
+                }
+
+                $.post("/debug/get_messages", {read:"True"});
+            });
+
+        });
+    </script>
+
+
+
 </head>
 <body>
     <!--Fixed Navbar-->
@@ -31,6 +48,9 @@
           <ul class="nav navbar-nav">
             <li class="active"><a href="{{url_for('index')}}">Home</a></li>
             <li><a href="{{url_for('dashboard')}}">Dashboard</a></li>
+            {% if user_logged %} 
+            <li><a href="{{url_for('msg_list', username=session.get('username'))}}">Messages</a></li>
+            {% endif %} 
           </ul>
           <ul class="nav navbar-nav navbar-right">
             <li>

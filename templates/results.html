@@ -29,6 +29,9 @@
           <ul class="nav navbar-nav">
             <li class="active"><a href="{{url_for('index')}}">Home</a></li>
             <li><a href="{{url_for('dashboard')}}">Dashboard</a></li>
+            {% if user_logged %} 
+            <li><a href="{{url_for('msg_list', username=session.get('username'))}}">Messages</a></li>
+            {% endif %} 
           </ul>
           <ul class="nav navbar-nav navbar-right">
             <li>

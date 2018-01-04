@@ -342,38 +342,14 @@ def msg_list(username):
 
 
 
-@application.route('/debug/message')
-def debug_index():
-    if session.get('debug_user') is None:
-        session['debug_user'] = 'testUser'
-        session['debug_admin'] = 'testAdmin'
-
-    return render_template('debug.html')
-
-# @application.route('/debug/new_message', methods=['POST'])
-# def new_message():
-
-
-#     to = session.get('debug_user')
-#     fromm = session.get('debug_admin')
-#     cur_time = datetime.now().isoformat(' ')
-
-#     new_message={}
-#     new_message['to'] = to
-#     new_message['from'] = fromm
-#     new_message['date'] = cur_time
-#     new_message['flashed'] = 'F'
-#     new_message['content'] = request.form.get('msg')
-
-#     putDB(table='Messages', item=new_message)
-
-
-#     return redirect(url_for('debug_index'))
-
-@application.route('/debug/get_messages', methods=['GET', 'POST'])
+@application.route('/user/get_messages', methods=['GET', 'POST'])
 def get_messages():
 
-    user = session.get('debug_user')
+    user = session.get('username')
+
+    if user is None:
+        return "[]"
+
     messages = searchDB(table='Messages', key_expr=Key('to').eq(user), filter_expr=Attr('flashed').eq('F'))
 
     if request.method == "GET":
@@ -385,7 +361,7 @@ def get_messages():
         for item in messages:
             updateDB(table='Messages', key={'to':item['to'], 'date':item['date']}, update_expr='SET flashed = :val', expr_vals={':val': 'T'})
 
-        return 'OK'
+        return 'OK', 200
 
     
 
