@@ -15,6 +15,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from base64 import b64encode
 import dateutil.parser
+from api import Error
 
 
 
@@ -363,6 +364,108 @@ def get_messages():
 
         return 'OK', 200
 
+
+#APIs
+
+@application.route('/api/rooms')
+def api_search_rooms():
+
+    query_string = request.args.get('query')
+
+    if not query_string:
+        return jsonify(Error().bad_request('Bad query')), 400
+
+    key = Key('room_initial').eq(query_string[0].lower()) & Key('room_name').begins_with(query_string.lower())
+    room_list = searchDB(table='Rooms', key_expr=key, proj_expr="room_id, room_name")
+
+    return jsonify({"Results": room_list})
+
+@application.route('/api/room/<room_id>')
+def api_room_info(room_id):
+
+    request = FenixRequest()
+    data = request.get_space_id(space_id=room_id)
+
+    if 'error' in data:
+        return jsonify(Error().not_found('Room not found')), 404
+
+    room_info={}
+    room_info['name'] = data['name']
+    room_info['floor'] = "0"
+    room_info['building'] = ""
+    room_info['campus'] = ""
+
+    
+
+    while 'parentSpace' in data:
+
+        if data['parentSpace']['type'] == 'FLOOR':
+            room_info['floor'] = data['parentSpace']['name']
+
+        if data['parentSpace']['type'] == 'BUILDING':
+            room_info['building'] = data['parentSpace']['name']
+
+        if data['parentSpace']['type'] == 'CAMPUS':
+            room_info['campus'] = data['parentSpace']['name']
+
+        data = request.get_space_id(space_id=data['parentSpace']['id'])
+
+    return jsonify(room_info)
+
+@application.route('/api/checkin/<room_id>', methods=['POST'])
+def api_checkin(room_id):
+
+    access_token = request.args.get('access_token')
+    implicit_checkout = request.args.get('implicit_checkout')
+
+    if access_token is None or implicit_checkout is None:
+        return jsonify(Error().bad_request('Missing parameters')), 400
+
+    if implicit_checkout != 'true' or implicit_checkout != "false":
+        return jsonify(Error().bad_request('implicit_checkout wrong value')), 400
+
+    if not is_logged_in(access_token):
+        return jsonify(Error().not_authorized('Invalid access token')), 410
+
+    request = FenixRequest()
+    room_info = request.get_space_id(space_id=room_id)
+
+    if 'error' in room_info:
+        return jsonify(Error().not_found('Room not found')), 404
+
+    user_data = FenixRequest().get_person(access_token)
+
+    user_in = getItemDB(table='Checkins', key={'user_id' : user_data['username']})
+
+    if user_in and implicit_checkout == 'false':
+        return jsonify(Error().conflict('User already checked-in in another room')), 409
+
+    cur_time = datetime.now().isoformat(' ')
+
+    if user_in and implicit_checkout == 'true':
+        key={'user_id':user_data['username']}
+        deleteDB(table='Checkins', key=key)
+
+        new_history_entry={}
+        new_history_entry['user_id'] = user_data['username']
+        new_history_entry['room_id'] = room_id
+        new_history_entry['date_in'] = user_in['date_in']
+        new_history_entry['date_out'] = cur_time
+        new_history_entry['room_name'] = user_in['room_name']
+        putDB(table='History', item=new_history_entry)
+
+
+    new_check_in={}
+    new_check_in['user_id'] = user_data['username']
+    new_check_in['room_id'] = room_id
+    new_check_in['date_in'] = cur_time
+    new_check_in['room_name'] =room_info['name']
+
+    putDB(table='Checkins', item=new_check_in)
+
+    return 'OK', 200
+
+
     
 
 #LOGIN FUNCTIONS
@@ -422,33 +525,61 @@ def is_admin_logged_in(username, access_token):
 #DATABASE OPERATIONS HELPERS
 
 
-def searchDB(table, key_expr, index_name=None, filter_expr=None):
+def searchDB(table, key_expr, index_name=None, filter_expr=None, proj_expr=None):
 
     dynamodb = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url=application.config['DB_ENDPOINT'])
     table = dynamodb.Table(table)
 
     if not index_name:
         if not filter_expr:
-            result_set = table.query(
-                KeyConditionExpression=key_expr,
-            )
+            if not proj_expr:
+                result_set = table.query(
+                    KeyConditionExpression=key_expr,
+                )
+            else:
+                result_set = table.query(
+                    KeyConditionExpression=key_expr,
+                    ProjectionExpression=proj_expr
+                )
         else:
-            result_set = table.query(
-                KeyConditionExpression=key_expr,
-                FilterExpression=filter_expr
-            )
+            if not proj_expr:
+                result_set = table.query(
+                    KeyConditionExpression=key_expr,
+                    FilterExpression=filter_expr
+                )
+            else:
+                result_set = table.query(
+                    KeyConditionExpression=key_expr,
+                    FilterExpression=filter_expr,
+                    ProjectionExpression=proj_expr
+                )
     else:
         if not filter_expr:
-            result_set = table.query(
-                IndexName=index_name,
-                KeyConditionExpression=key_expr,
-            )
+            if not proj_expr:
+                result_set = table.query(
+                    IndexName=index_name,
+                    KeyConditionExpression=key_expr,
+                )
+            else:
+                result_set = table.query(
+                    IndexName=index_name,
+                    KeyConditionExpression=key_expr,
+                    ProjectionExpression=proj_expr
+                )
         else:
-            result_set = table.query(
-                IndexName=index_name,
-                KeyConditionExpression=key_expr,
-                FilterExpression=filter_expr
-            )
+            if not proj_expr:
+                result_set = table.query(
+                    IndexName=index_name,
+                    KeyConditionExpression=key_expr,
+                    FilterExpression=filter_expr
+                )
+            else:
+                result_set = table.query(
+                    IndexName=index_name,
+                    KeyConditionExpression=key_expr,
+                    FilterExpression=filter_expr,
+                    ProjectionExpression=proj_expr,
+                )
 
     return result_set['Items']
 

@@ -23,7 +23,9 @@
                     $("#messages").notify(resp[i]["content"], "info");
                 }
 
-                $.post("/user/get_messages", {read:"True"});
+                if (resp.length > 0){
+                    $.post("/user/get_messages", {read:"True"});
+                }
             });
 
             setTimeout(worker, 5000);
