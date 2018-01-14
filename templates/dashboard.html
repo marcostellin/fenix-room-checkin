@@ -10,11 +10,28 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 
+    <script src="{{ url_for('static', filename='moment.js') }}"></script>
+    <script src="{{ url_for('static', filename='moment-timezone-with-data.js') }}"></script>
 
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='dashboard.css') }}">
     {% if user_logged %}
     <script src="{{ url_for('static', filename='get_messages.js') }}"></script> 
     {% endif %}
+
+    <script type="text/javascript">
+        $(document).ready( function (){
+
+            $(".checkin-date").each( function (index){
+
+
+                utcTime = $(this).html();
+                var locale = moment.utc(utcTime).local().format('DD-MM-YYYY HH:mm:ss');
+                $(this).html(locale);
+
+            });
+        });
+
+    </script>
 
 
 </head>
@@ -111,7 +128,7 @@
                         {% for entry in checkin_list %}
                         <tr>
                             <td>{{entry['user_id']}}</td>
-                            <td>{{entry['date_in']}}</td>
+                            <td class="checkin-date">{{entry['date_in']}}</td>
                             <td><a href="{{url_for('rooms', id=entry['room_id'])}}">{{entry['room_name']}}</a></td>
                             <td><a href="{{url_for('write_msg', username=entry['user_id'])}}">Send message</a></td>
                         </tr>

@@ -31,10 +31,10 @@ application.config['DB_ENDPOINT'] = "https://dynamodb.us-west-2.amazonaws.com"
 application.config['MC_ENDPOINT'] = "room-checkin.7ravpu.cfg.usw2.cache.amazonaws.com:11211"
 
 
-# @application.before_request
-# def make_session_permanent():
-#     session.permanent = True
-#     application.permanent_session_lifetime = timedelta(days=1)
+@application.before_request
+def make_session_permanent():
+     session.permanent = True
+     application.permanent_session_lifetime = timedelta(days=1)
 
 
 @application.route('/')
