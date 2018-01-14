@@ -528,7 +528,7 @@ def api_checkin_list():
     return jsonify(response)
 
 @application.route('/api/messages')
-def api_messages:
+def api_messages():
     access_token = request.args.get('access_token')
     if access_token is None:
         return jsonify(Error().bad_request('Missing parameters')), 400
