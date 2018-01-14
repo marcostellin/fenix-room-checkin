@@ -316,7 +316,7 @@ def new_message(username):
 
     return redirect(url_for('index'))
 
-@application.route('/user/<username>/message')
+@application.route('/admin/message/<username>')
 def write_msg(username):
 
     if not is_admin_logged_in(session.get('username'), session.get('access_token')):
@@ -327,7 +327,7 @@ def write_msg(username):
     return render_template('send_message.html', username=username)
 
 
-@application.route('/user/<username>/message-list')
+@application.route('/user/<username>/messages')
 def msg_list(username):
 
     if not is_logged_in(session.get('access_token')):
@@ -343,7 +343,7 @@ def msg_list(username):
 
 
 
-@application.route('/user/get_messages', methods=['GET', 'POST'])
+@application.route('/user/ajax/messages', methods=['GET', 'POST'])
 def get_messages():
 
     user = session.get('username')
@@ -412,61 +412,135 @@ def api_room_info(room_id):
 
     return jsonify(room_info)
 
-@application.route('/api/checkin/<room_id>', methods=['POST'])
+@application.route('/api/checkins/<room_id>', methods=['POST, DELETE'])
 def api_checkin(room_id):
 
+    if request.method == 'POST':
+        access_token = request.args.get('access_token')
+        implicit_checkout = request.args.get('implicit_checkout')
+
+        if access_token is None or implicit_checkout is None:
+            return jsonify(Error().bad_request('Missing parameters')), 400
+
+        if implicit_checkout != 'true' or implicit_checkout != "false":
+            return jsonify(Error().bad_request('implicit_checkout wrong value')), 400
+
+        if not is_logged_in(access_token):
+            return jsonify(Error().not_authorized('Invalid access token')), 410
+
+        request = FenixRequest()
+        room_info = request.get_space_id(space_id=room_id)
+
+        if 'error' in room_info:
+            return jsonify(Error().not_found('Room not found')), 404
+
+        user_data = FenixRequest().get_person(access_token)
+
+        user_in = getItemDB(table='Checkins', key={'user_id' : user_data['username']})
+
+        if user_in and implicit_checkout == 'false':
+            return jsonify(Error().conflict('User already checked-in in another room')), 409
+
+        cur_time = datetime.now().isoformat(' ')
+
+        if user_in and implicit_checkout == 'true':
+            key={'user_id':user_data['username']}
+            deleteDB(table='Checkins', key=key)
+
+            new_history_entry={}
+            new_history_entry['user_id'] = user_data['username']
+            new_history_entry['room_id'] = room_id
+            new_history_entry['date_in'] = user_in['date_in']
+            new_history_entry['date_out'] = cur_time
+            new_history_entry['room_name'] = user_in['room_name']
+            putDB(table='History', item=new_history_entry)
+
+
+        new_check_in={}
+        new_check_in['user_id'] = user_data['username']
+        new_check_in['room_id'] = room_id
+        new_check_in['date_in'] = cur_time
+        new_check_in['room_name'] =room_info['name']
+
+        putDB(table='Checkins', item=new_check_in)
+
+        return 'OK', 200
+    
+    if request.method == 'DELETE':
+        access_token = request.args.get('access_token')
+        
+        if access_token is None:
+            return jsonify(Error().bad_request('Missing parameters')), 400
+
+        if not is_logged_in(access_token):
+            return jsonify(Error().not_authorized('Invalid access token')), 410
+
+        user_data = FenixRequest().get_person(access_token)
+
+        user_in = getItemDB(table='Checkins', key={'user_id' : user_data['username']})
+
+        if not user_in:
+            return jsonify(Error().not_found('User not checked-in in any room')), 404
+
+        if user_in['room_id'] != room_id:
+            return jsonify(Error().not_found('User not checked-in in specified room')), 404
+
+        cur_time = datetime.now().isoformat(' ')
+
+        if user_in:
+            key={'user_id':user_data['username']}
+            deleteDB(table='Checkins', key=key)
+
+            new_history_entry={}
+            new_history_entry['user_id'] = user_data['username']
+            new_history_entry['room_id'] = room_id
+            new_history_entry['date_in'] = user_in['date_in']
+            new_history_entry['date_out'] = cur_time
+            new_history_entry['room_name'] = user_in['room_name']
+            putDB(table='History', item=new_history_entry)
+
+        return 'DELETED', 204
+
+@application.route('/api/checkins/list')
+def api_checkin_list():
+
     access_token = request.args.get('access_token')
-    implicit_checkout = request.args.get('implicit_checkout')
-
-    if access_token is None or implicit_checkout is None:
+        
+    if access_token is None:
         return jsonify(Error().bad_request('Missing parameters')), 400
-
-    if implicit_checkout != 'true' or implicit_checkout != "false":
-        return jsonify(Error().bad_request('implicit_checkout wrong value')), 400
 
     if not is_logged_in(access_token):
         return jsonify(Error().not_authorized('Invalid access token')), 410
 
-    request = FenixRequest()
-    room_info = request.get_space_id(space_id=room_id)
-
-    if 'error' in room_info:
-        return jsonify(Error().not_found('Room not found')), 404
-
     user_data = FenixRequest().get_person(access_token)
-
     user_in = getItemDB(table='Checkins', key={'user_id' : user_data['username']})
 
-    if user_in and implicit_checkout == 'false':
-        return jsonify(Error().conflict('User already checked-in in another room')), 409
+    if not user_in:
+        return jsonify(Error().not_found('User not checked-in in any room')), 404
 
-    cur_time = datetime.now().isoformat(' ')
+    other_users = searchDB(table='Checkins', index_name='room_id', key_expr=Key('room_id').eq(user_in['room_id']), proj_expr="user_id")
 
-    if user_in and implicit_checkout == 'true':
-        key={'user_id':user_data['username']}
-        deleteDB(table='Checkins', key=key)
+    response = {}
+    response['room_id'] = user_in['room_id']
+    response['room_name'] = user_in['room_name']
+    response['users'] = other_users
 
-        new_history_entry={}
-        new_history_entry['user_id'] = user_data['username']
-        new_history_entry['room_id'] = room_id
-        new_history_entry['date_in'] = user_in['date_in']
-        new_history_entry['date_out'] = cur_time
-        new_history_entry['room_name'] = user_in['room_name']
-        putDB(table='History', item=new_history_entry)
+    return jsonify(response)
 
+@application.route('/api/messages')
+def api_messages:
+    access_token = request.args.get('access_token')
+    if access_token is None:
+        return jsonify(Error().bad_request('Missing parameters')), 400
 
-    new_check_in={}
-    new_check_in['user_id'] = user_data['username']
-    new_check_in['room_id'] = room_id
-    new_check_in['date_in'] = cur_time
-    new_check_in['room_name'] =room_info['name']
+    if not is_logged_in(access_token):
+        return jsonify(Error().not_authorized('Invalid access token')), 410
 
-    putDB(table='Checkins', item=new_check_in)
+    msg_list = searchDB(table='Messages', key_expr=Key('to').eq(username))
 
-    return 'OK', 200
+    return jsonify({'items' : msg_list})
 
-
-    
+ 
 
 #LOGIN FUNCTIONS
 
@@ -623,6 +697,4 @@ def getItemDB(table, key):
         return result['Item']
     else:
         return {}
-
-    #return result['Item']
 
