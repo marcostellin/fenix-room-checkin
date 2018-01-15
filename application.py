@@ -8,6 +8,7 @@ from make_request import *
 import json
 import fenixedu
 import boto3
+import time
 from boto3.dynamodb.conditions import Key, Attr
 from datetime import datetime, timedelta
 import memcache
@@ -315,6 +316,7 @@ def new_message(username):
     cur_time = datetime.now().isoformat(' ')
 
     new_message={}
+    new_message['id'] = str(int(round(time.time() * 1000)))
     new_message['to'] = to
     new_message['from'] = sender
     new_message['date'] = cur_time
