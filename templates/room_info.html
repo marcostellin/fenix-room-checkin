@@ -17,6 +17,10 @@
     <script src="{{ url_for('static', filename='get_messages.js') }}"></script> 
     {% endif %}
 
+    {% if admin_logged %}
+        <script src="{{ url_for('static', filename='local_time.js') }}"></script> 
+    {% endif %}
+
 </head>
 <body>
 
@@ -116,7 +120,7 @@
                             {% for user in user_in %}
                             <tr>
                                 <td>{{user['user_id']}}</td>
-                                <td>{{user['date_in']}}</td>
+                                <td class="date">{{user['date_in']}}</td>
                                 <td><a href="{{url_for('write_msg', username=user['user_id'])}}">Send message</a></td>
                             </tr>
                             {% endfor %}
@@ -145,8 +149,8 @@
                             {% for entry in prev_history %}
                             <tr>
                                 <td>{{entry['user_id']}}</td>
-                                <td>{{entry['date_in']}}</td>
-                                <td>{{entry['date_out']}}</td>
+                                <td class="date">{{entry['date_in']}}</td>
+                                <td class="date">{{entry['date_out']}}</td>
                             </tr>
                             {% endfor %}
                         </tbody>

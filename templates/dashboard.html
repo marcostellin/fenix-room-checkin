@@ -15,24 +15,12 @@
 
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='dashboard.css') }}">
     {% if user_logged %}
-    <script src="{{ url_for('static', filename='get_messages.js') }}"></script> 
+        <script src="{{ url_for('static', filename='get_messages.js') }}"></script> 
     {% endif %}
 
-    <script type="text/javascript">
-        $(document).ready( function (){
-
-            $(".checkin-date").each( function (index){
-
-
-                utcTime = $(this).html();
-                var locale = moment.utc(utcTime).local().format('DD-MM-YYYY HH:mm:ss');
-                $(this).html(locale);
-
-            });
-        });
-
-    </script>
-
+    {% if admin_logged %}
+        <script src="{{ url_for('static', filename='local_time.js') }}"></script> 
+    {% endif %}
 
 </head>
 <body>
@@ -128,7 +116,7 @@
                         {% for entry in checkin_list %}
                         <tr>
                             <td>{{entry['user_id']}}</td>
-                            <td class="checkin-date">{{entry['date_in']}}</td>
+                            <td class="date">{{entry['date_in']}}</td>
                             <td><a href="{{url_for('rooms', id=entry['room_id'])}}">{{entry['room_name']}}</a></td>
                             <td><a href="{{url_for('write_msg', username=entry['user_id'])}}">Send message</a></td>
                         </tr>

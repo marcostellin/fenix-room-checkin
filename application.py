@@ -175,6 +175,11 @@ def rooms(id):
 
     request = FenixRequest()
     data = request.get_space_id(space_id=id)
+
+    if 'error' in data:
+        return redirect(url_for('static', filename='404.html'), 404)
+
+
     room_info={}
     room_info['room_name'] = data['name']
     room_info['floor_name'] = "0"
@@ -215,9 +220,6 @@ def rooms(id):
 @application.route('/rooms/<id>/checkin')
 def checkin(id):
 
-    #DEBUG ONLY
-    #username = "ist427286"
-
     if not is_logged_in(session.get('access_token')):
         session.pop('username', None)
         session.pop('access_token', None)
@@ -226,6 +228,10 @@ def checkin(id):
     username = session.get('username')
 
     room_info = FenixRequest().get_space_id(space_id=id)
+
+    if 'error' in room_info:
+        return redirect(url_for('static', filename='404.html'), 404)
+
     
     cur_time = datetime.now().isoformat(' ')
 
@@ -263,6 +269,11 @@ def checkout(id):
         session.pop('username', None)
         session.pop('access_token', None)
         return redirect(url_for('login'))
+
+    data = FenixRequest().get_space_id(space_id=id)
+
+    if 'error' in data:
+        return redirect(url_for('static', filename='404.html'), 404)
 
     username = session.get('username')
 
@@ -365,7 +376,7 @@ def get_messages():
         return 'OK', 200
 
 
-#APIs
+#API Users 
 
 @application.route('/api/rooms')
 def api_search_rooms():
@@ -540,7 +551,88 @@ def api_messages():
 
     return jsonify({'items' : msg_list})
 
- 
+
+# API admins
+
+@application.route('/api/<room_id>/history')
+def api_admin_history(room_id):
+
+    access_token = request.args.get('access_token')
+    username = request.args.get('username')
+
+    if access_token is None or username is None:
+        return jsonify(Error().bad_request('Missing parameters')), 400
+
+    if not is_admin_logged_in(username, access_token):
+        return jsonify(Error().not_authorized('Invalid credentials or expired token')), 410
+
+    prev_history = searchDB(table='History', key_expr=Key('room_id').eq(room_id), index_name='room_id-index', proj_expr="user_id, room_name, date_in, date_out")
+
+    return jsonify({'items' : prev_history})
+
+@application.route('/api/<room_id>/checkins')
+def api_admin_checkins_room(room_id):
+
+    access_token = request.args.get('access_token')
+    username = request.args.get('username')
+
+    if access_token is None or username is None:
+        return jsonify(Error().bad_request('Missing parameters')), 400
+
+    if not is_admin_logged_in(username, access_token):
+        return jsonify(Error().not_authorized('Invalid credentials or expired token')), 410
+
+    user_in = searchDB(table='Checkins', key_expr=Key('room_id').eq(room_id), index_name='room_id', proj_expr='user_id, room_name, date_in')
+
+    return jsonify({'items' : user_in})
+
+@application.route('/api/checkins')
+def api_admin_checkins():
+
+    access_token = request.args.get('access_token')
+    username = request.args.get('username')
+
+    if access_token is None or username is None:
+        return jsonify(Error().bad_request('Missing parameters')), 400
+
+    if not is_admin_logged_in(username, access_token):
+        return jsonify(Error().not_authorized('Invalid credentials or expired token')), 410
+
+    checkin_list = scanDB(table='Checkins')
+
+    return jsonify({'items' : checkin_list})
+
+@application.route('/api/<user_id>/messages', methods=['POST'])
+def api_admin_sendmsg(user_id):
+
+    access_token = request.form.get('access_token')
+    username = request.form.get('username')
+    msg = request.form.get('msg')
+
+    if access_token is None or username is None or msg is None:
+        return jsonify(Error().bad_request('Missing parameters')), 400
+
+    if not is_admin_logged_in(username, access_token):
+        return jsonify(Error().not_authorized('Invalid credentials or expired token')), 410
+
+
+    to = user_id
+    sender = username
+    cur_time = datetime.now().isoformat(' ')
+
+    new_message={}
+    new_message['to'] = to
+    new_message['from'] = sender
+    new_message['date'] = cur_time
+    new_message['flashed'] = 'F'
+    new_message['read'] = 'F'
+    new_message['content'] = msg
+
+    putDB(table='Messages', item=new_message)
+
+    return 'Sent', 201
+
+
 
 #LOGIN FUNCTIONS
 

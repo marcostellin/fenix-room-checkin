@@ -16,6 +16,9 @@
     <script src="{{ url_for('static', filename='get_messages.js') }}"></script> 
     {% endif %}
 
+    <script src="{{ url_for('static', filename='local_time.js') }}"></script> 
+
+
 </head>
 <body>
 
@@ -82,7 +85,7 @@
                             {% for entry in msg_list %}
                             <tr>
                                 <td>{{entry['from']}}</td>
-                                <td>{{entry['date']}}</td>
+                                <td class="date">{{entry['date']}}</td>
                                 <td>{{entry['content']}}</td>
                             </tr>
                             {% endfor %}
