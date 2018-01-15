@@ -6,10 +6,11 @@
                     function (){
                        $.post("/user/ajax/messages", {read:"True"});
                     })
-                    .always(function (){
-                       setTimeout(worker, 5000);
-                    });
+
                 
-            });
+            })
+              .always(function (){
+                  setTimeout(worker, 5000);
+              });
            
 });
