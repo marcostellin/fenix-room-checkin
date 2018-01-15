@@ -366,7 +366,7 @@ def get_messages():
 
     if request.method == "GET":
         
-        return jsonify(messages)
+        return jsonify(messages[0])
 
     if request.method == "POST":
 
