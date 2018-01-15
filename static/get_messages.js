@@ -1,19 +1,15 @@
  $(document).ready(function worker() {
  
             $.getJSON("/user/ajax/messages", function(resp){
-                for (var i=0; i<resp.length; i++){
-                    var flag = false;
-                    
-                    alertify.alert("Message from " + resp[i]["from"], resp[i]["content"],
+
+                    alertify.alert("Message from " + resp["from"], resp["content"],
                     function (){
                        $.post("/user/ajax/messages", {read:"True"});
-                       flag = true;
+                    })
+                    .always(function (){
+                       setTimeout(worker, 5000);
                     });
-                    
-                    while (!flag){};
-                }
-
+                
             });
-            
-            setTimeout(worker, 5000);
+           
 });
