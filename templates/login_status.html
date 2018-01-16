@@ -13,7 +13,11 @@
 
     <script type="text/javascript">
         setTimeout(function () {
-            window.location.href = "{{url_for('index')}}";
+            {% if success %}
+                window.location.href = "{{url_for('index')}}";
+            {% else %}
+                window.location.href = "{{url_for('login')}}";
+            {% endif %}
         }, 2000); 
     </script>
 </head>
