@@ -565,6 +565,59 @@ def api_messages():
     return jsonify({'items' : msg_list})
 
 
+@application.route('/api/<user_id>/messages/<msg_id>', methods=['POST'])
+def api_readmsg(user_id, msg_id):
+
+    access_token = request.args.get('access_token')
+    if access_token is None:
+        return jsonify(Error().bad_request('Missing parameters')), 400
+
+    if not is_logged_in(access_token):
+        return jsonify(Error().not_authorized('Invalid access token')), 410
+
+    user_data = FenixRequest().get_person(access_token)
+
+    if 'error' in user_data:
+        return jsonify(Error().not_found('User not found')), 404
+
+    if user_data['username'] != user_id:
+        return jsonify(Error().not_authorized('Not authorized')), 410
+
+    msg = getItemDB(table='Messages', key={'id' : msg_id})
+
+    if not msg:
+        return jsonify(Error().not_found('Message not found')), 404
+
+    updateDB(table='Messages', key={'id': msg_id}, update_expr='SET flashed = :val', expr_vals={':val': 'T'})
+
+    return 'OK', 200
+
+
+@application.route('/api/<user_id>/messages/<msg_id>')
+def api_getmsg(user_id, msg_id):
+
+    access_token = request.args.get('access_token')
+    if access_token is None:
+        return jsonify(Error().bad_request('Missing parameters')), 400
+
+    if not is_logged_in(access_token):
+        return jsonify(Error().not_authorized('Invalid access token')), 410
+
+    user_data = FenixRequest().get_person(access_token)
+
+    if 'error' in user_data:
+        return jsonify(Error().not_found('User not found')), 404
+
+    if user_data['username'] != user_id:
+        return jsonify(Error().not_authorized('Not authorized')), 410
+
+    msg = getItemDB(table='Messages', key={'id' : msg_id})
+
+    if not msg:
+        return jsonify(Error().not_found('Message not found')), 404
+
+    return jsonify(msg)
+
 # API admins
 
 @application.route('/api/<room_id>/history')
@@ -645,6 +698,8 @@ def api_admin_sendmsg(user_id):
     putDB(table='Messages', item=new_message)
 
     return 'Sent', 201
+
+
 
 
 
