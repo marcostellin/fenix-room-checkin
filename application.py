@@ -439,7 +439,7 @@ def api_checkin(room_id):
 
     if request.method == 'POST':
 
-        print(ok);
+        return 'OK'
     
     if request.method == 'DELETE':
         access_token = request.args.get('access_token')
