@@ -209,6 +209,9 @@ def rooms(id):
     user_in = searchDB(table='Checkins', key_expr=Key('room_id').eq(id), index_name='room_id')
     prev_history = searchDB(table='History', key_expr=Key('room_id').eq(id), index_name='room_id-index')
 
+    prev_history_sorted = sorted(prev_history, key=lambda entry: entry['date_out'], reverse=True)
+    user_in_sorted = sorted(user_in, key=lambda entry: entry['date_in'], reverse=True)
+
     return render_template('room_info.html', room_name=room_info['room_name'], 
                                              building_name=room_info['building_name'], 
                                              floor_name=room_info['floor_name'],
@@ -217,7 +220,7 @@ def rooms(id):
                                              user_logged=user_logged_in,
                                              admin_logged=admin_logged_in,
                                              user_in=user_in,
-                                             prev_history=prev_history
+                                             prev_history=prev_history_sorted
                                              )
 
 
