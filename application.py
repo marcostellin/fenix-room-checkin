@@ -618,6 +618,28 @@ def api_getmsg(user_id, msg_id):
 
     return jsonify(msg)
 
+@application.route('/api/<user_id>/messages/unread')
+def api_unreadmsg(user_id):
+
+    access_token = request.args.get('access_token')
+    if access_token is None:
+        return jsonify(Error().bad_request('Missing parameters')), 400
+
+    if not is_logged_in(access_token):
+        return jsonify(Error().not_authorized('Invalid access token')), 410
+
+    user_data = FenixRequest().get_person(access_token)
+
+    if 'error' in user_data:
+        return jsonify(Error().not_found('User not found')), 404
+
+    if user_data['username'] != user_id:
+        return jsonify(Error().not_authorized('Not authorized')), 410
+
+    messages = searchDB(table='Messages', key_expr=Key('to').eq(user_id), filter_expr=Attr('flashed').eq('F'), index_name='to-index')
+
+    return jsonify(messages)
+
 # API admins
 
 @application.route('/api/<room_id>/history')
