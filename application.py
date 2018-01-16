@@ -451,7 +451,7 @@ def api_checkin(room_id):
         if not is_logged_in(access_token):
             return jsonify(Error().not_authorized('Invalid access token')), 410
 
-        room_info = FenixRequest().request.get_space_id(space_id=room_id)
+        room_info = FenixRequest().get_space_id(space_id=room_id)
 
         if 'error' in room_info:
             return jsonify(Error().not_found('Room not found')), 404
