@@ -445,7 +445,7 @@ def api_checkin(room_id):
         if access_token is None or implicit_checkout is None:
             return jsonify(Error().bad_request('Missing parameters')), 400
 
-        if implicit_checkout != 'true' or implicit_checkout != "false":
+        if implicit_checkout != 'true' and implicit_checkout != "false":
             return jsonify(Error().bad_request('implicit_checkout wrong value')), 400
 
         if not is_logged_in(access_token):
