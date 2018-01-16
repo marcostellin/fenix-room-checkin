@@ -141,11 +141,13 @@ def dashboard():
     if admin_logged:
 
         checkin_list = scanDB(table='Checkins')
+
+        checkin_list_sorted = sorted(checkin_list, key=lambda entry: entry['date_in'], reverse=True)
     
         return render_template('dashboard.html', 
                                 user_logged=user_logged, 
                                 admin_logged=admin_logged, 
-                                checkin_list=checkin_list)
+                                checkin_list=checkin_list_sorted)
 
     return redirect(url_for('login'))
    
@@ -219,7 +221,7 @@ def rooms(id):
                                              url=url_for('checkin', id=id),
                                              user_logged=user_logged_in,
                                              admin_logged=admin_logged_in,
-                                             user_in=user_in,
+                                             user_in=user_in_sorted,
                                              prev_history=prev_history_sorted
                                              )
 
