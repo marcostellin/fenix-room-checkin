@@ -339,7 +339,7 @@ def msg_list(username):
 
         user_logged = is_logged_in(session.get('access_token'))
 
-        msg_list = searchDB(table='Messages', key_expr=Key('to').eq(username))
+        msg_list = searchDB(table='Messages', key_expr=Key('to').eq(username), index_name='to-index')
 
         return render_template('message_list.html', msg_list=msg_list, user_logged=user_logged)
 
@@ -363,7 +363,7 @@ def get_messages():
     if user is None:
         return "[]"
 
-    messages = searchDB(table='Messages', key_expr=Key('to').eq(user), filter_expr=Attr('flashed').eq('F'))
+    messages = searchDB(table='Messages', key_expr=Key('to').eq(user), filter_expr=Attr('flashed').eq('F'), index_name='to-index')
 
     if not messages:
         return 'No messages', 404
@@ -373,7 +373,7 @@ def get_messages():
 @application.route('/user/ajax/messages/<msg_id>', methods=['POST'])
 def update_messages(msg_id):    
 
-    updateDB(table='Messages', key={'id': msg_id}, index_name='id-index', update_expr='SET flashed = :val', expr_vals={':val': 'T'})
+    updateDB(table='Messages', key={'id': msg_id}, update_expr='SET flashed = :val', expr_vals={':val': 'T'})
 
     return 'OK', 200
 
@@ -772,21 +772,15 @@ def scanDB(table):
 
     return result_set['Items']
 
-def updateDB(table, key, update_expr, expr_vals, index_name=None):
+def updateDB(table, key, update_expr, expr_vals):
     dynamodb = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url=application.config['DB_ENDPOINT'])
     table = dynamodb.Table(table)
 
-    if index_name is None:
-        table.update_item(Key=key,
+
+    table.update_item(Key=key,
                           UpdateExpression=update_expr,
                           ExpressionAttributeValues=expr_vals,  
-                         )
-    else:
-        table.update_item(Key=key,
-                          UpdateExpression=update_expr,
-                          ExpressionAttributeValues=expr_vals,
-                          IndexName=index_name,  
-                         )        
+                      )     
 
 def getItemDB(table, key):
     dynamodb = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url=application.config['DB_ENDPOINT'])
