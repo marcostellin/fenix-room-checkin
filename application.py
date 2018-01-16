@@ -368,6 +368,10 @@ def get_messages():
     if not messages:
         return 'No messages', 404
 
+    messages_sorted = sorted(messages, key = lambda msg: msg['date'])
+
+    print(messages_sorted)
+
     return jsonify(messages[0])
 
 @application.route('/user/ajax/messages/<msg_id>', methods=['POST'])
