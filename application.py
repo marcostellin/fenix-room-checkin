@@ -60,6 +60,9 @@ def user_auth():
     client = fenixedu.FenixEduClient(config)
     user = client.get_user_by_code(code)
     data = FenixRequest().get_person(user.access_token)
+
+    print(user.access_token)
+    
     session['access_token'] = user.access_token
     session['username'] = data['username']
 
