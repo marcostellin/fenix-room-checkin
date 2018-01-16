@@ -303,31 +303,46 @@ def logout():
 
     return redirect(url_for('index'))
 
-@application.route('/user/<username>/new-message', methods=['POST'])
-def new_message(username):
+@application.route('/user/<username>/messages', methods=['POST', 'GET'])
+def msg_list(username):
 
-    if not is_admin_logged_in(session.get('username'), session.get('access_token')):
-        session.pop('username', None)
-        session.pop('access_token', None)
-        return redirect(url_for('login'))
+    if request.method == 'POST':
+        if not is_admin_logged_in(session.get('username'), session.get('access_token')):
+            session.pop('username', None)
+            session.pop('access_token', None)
+            return redirect(url_for('login'))
 
-    to = username
-    sender = session.get('username')
-    cur_time = datetime.now().isoformat(' ')
+        to = username
+        sender = session.get('username')
+        cur_time = datetime.now().isoformat(' ')
 
-    new_message={}
-    new_message['id'] = str(int(round(time.time() * 1000)))
-    new_message['to'] = to
-    new_message['from'] = sender
-    new_message['date'] = cur_time
-    new_message['flashed'] = 'F'
-    new_message['read'] = 'F'
-    new_message['content'] = request.form.get('msg')
+        new_message={}
+        new_message['id'] = str(int(round(time.time() * 1000)))
+        new_message['to'] = to
+        new_message['from'] = sender
+        new_message['date'] = cur_time
+        new_message['flashed'] = 'F'
+        new_message['read'] = 'F'
+        new_message['content'] = request.form.get('msg')
 
-    putDB(table='Messages', item=new_message)
+        putDB(table='Messages', item=new_message)
 
 
-    return redirect(url_for('index'))
+        return redirect(url_for('index'))
+
+    if request.method == 'GET':
+        
+        if not is_logged_in(session.get('access_token')):
+            session.pop('username', None)
+            session.pop('access_token', None)
+            return redirect(url_for('login'))
+
+        user_logged = is_logged_in(session.get('access_token'))
+
+        msg_list = searchDB(table='Messages', key_expr=Key('to').eq(username))
+
+        return render_template('message_list.html', msg_list=msg_list, user_logged=user_logged)
+
 
 @application.route('/admin/message/<username>')
 def write_msg(username):
@@ -338,22 +353,6 @@ def write_msg(username):
         return redirect(url_for('login'))
 
     return render_template('send_message.html', username=username)
-
-
-@application.route('/user/<username>/messages')
-def msg_list(username):
-
-    if not is_logged_in(session.get('access_token')):
-        session.pop('username', None)
-        session.pop('access_token', None)
-        return redirect(url_for('login'))
-
-    user_logged = is_logged_in(session.get('access_token'))
-
-    msg_list = searchDB(table='Messages', key_expr=Key('to').eq(username))
-
-    return render_template('message_list.html', msg_list=msg_list, user_logged=user_logged)
-
 
 
 @application.route('/user/ajax/messages', methods=['GET', 'POST'])

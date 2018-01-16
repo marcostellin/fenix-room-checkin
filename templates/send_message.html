@@ -58,7 +58,7 @@
              <div class="col center-block text-center"> 
                     <h1>Write a message to {{username}}</h1>
 
-                    <form action="{{url_for('new_message', username=username)}}" method="POST">
+                    <form action="{{url_for('msg_list', username=username)}}" method="POST">
                         <textarea name="msg" cols="80" rows="20"></textarea> </br>
                         <input class="btn btn-primary" type="submit" name="submit" value="Send">
                     </form>
