@@ -341,7 +341,7 @@ def msg_list(username):
 
         msg_list = searchDB(table='Messages', key_expr=Key('to').eq(username), index_name='to-index')
 
-        messages_sorted = sorted(msg_list, key = lambda msg: msg['date'])
+        messages_sorted = sorted(msg_list, key = lambda msg: msg['date'], reverse=True)
 
         return render_template('message_list.html', msg_list=messages_sorted, user_logged=user_logged)
 
@@ -431,7 +431,7 @@ def api_room_info(room_id):
 
     return jsonify(room_info)
 
-@application.route('/api/checkins/<room_id>', methods=['POST, DELETE'])
+@application.route('/api/checkins/<room_id>', methods=['POST', 'DELETE'])
 def api_checkin(room_id):
 
     if request.method == 'POST':
