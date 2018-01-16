@@ -438,55 +438,8 @@ def api_room_info(room_id):
 def api_checkin(room_id):
 
     if request.method == 'POST':
-        access_token = request.args.get('access_token')
-        implicit_checkout = request.args.get('implicit_checkout')
 
-        if access_token is None or implicit_checkout is None:
-            return jsonify(Error().bad_request('Missing parameters')), 400
-
-        if implicit_checkout != 'true' or implicit_checkout != "false":
-            return jsonify(Error().bad_request('implicit_checkout wrong value')), 400
-
-        if not is_logged_in(access_token):
-            return jsonify(Error().not_authorized('Invalid access token')), 410
-
-        request = FenixRequest()
-        room_info = request.get_space_id(space_id=room_id)
-
-        if 'error' in room_info:
-            return jsonify(Error().not_found('Room not found')), 404
-
-        user_data = FenixRequest().get_person(access_token)
-
-        user_in = getItemDB(table='Checkins', key={'user_id' : user_data['username']})
-
-        if user_in and implicit_checkout == 'false':
-            return jsonify(Error().conflict('User already checked-in in another room')), 409
-
-        cur_time = datetime.now().isoformat(' ')
-
-        if user_in and implicit_checkout == 'true':
-            key={'user_id':user_data['username']}
-            deleteDB(table='Checkins', key=key)
-
-            new_history_entry={}
-            new_history_entry['user_id'] = user_data['username']
-            new_history_entry['room_id'] = room_id
-            new_history_entry['date_in'] = user_in['date_in']
-            new_history_entry['date_out'] = cur_time
-            new_history_entry['room_name'] = user_in['room_name']
-            putDB(table='History', item=new_history_entry)
-
-
-        new_check_in={}
-        new_check_in['user_id'] = user_data['username']
-        new_check_in['room_id'] = room_id
-        new_check_in['date_in'] = cur_time
-        new_check_in['room_name'] =room_info['name']
-
-        putDB(table='Checkins', item=new_check_in)
-
-        return 'OK', 200
+        print(ok);
     
     if request.method == 'DELETE':
         access_token = request.args.get('access_token')
@@ -560,7 +513,7 @@ def api_messages():
 
     user_data = FenixRequest().get_person(access_token)
 
-    msg_list = searchDB(table='Messages', key_expr=Key('to').eq(user_data['username']), index_name='to-index', proj_expr='content, date, from, to')
+    msg_list = searchDB(table='Messages', key_expr=Key('to').eq(user_data['username']), index_name='to-index')
 
     return jsonify({'items' : msg_list})
 
