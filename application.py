@@ -62,7 +62,7 @@ def user_auth():
     data = FenixRequest().get_person(user.access_token)
 
     print(user.access_token)
-    
+
     session['access_token'] = user.access_token
     session['username'] = data['username']
 
@@ -558,7 +558,9 @@ def api_messages():
     if not is_logged_in(access_token):
         return jsonify(Error().not_authorized('Invalid access token')), 410
 
-    msg_list = searchDB(table='Messages', key_expr=Key('to').eq(username), index_name='to-index')
+    user_data = FenixRequest().get_person(access_token)
+
+    msg_list = searchDB(table='Messages', key_expr=Key('to').eq(user_data['username']), index_name='to-index')
 
     return jsonify({'items' : msg_list})
 
