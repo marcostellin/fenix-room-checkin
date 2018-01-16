@@ -370,9 +370,9 @@ def get_messages():
 
     messages_sorted = sorted(messages, key = lambda msg: msg['date'])
 
-    print(messages_sorted)
+    #print(messages_sorted)
 
-    return jsonify(messages[0])
+    return jsonify(messages_sorted[0])
 
 @application.route('/user/ajax/messages/<msg_id>', methods=['POST'])
 def update_messages(msg_id):    
