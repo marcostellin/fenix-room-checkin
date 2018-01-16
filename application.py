@@ -341,7 +341,9 @@ def msg_list(username):
 
         msg_list = searchDB(table='Messages', key_expr=Key('to').eq(username), index_name='to-index')
 
-        return render_template('message_list.html', msg_list=msg_list, user_logged=user_logged)
+        messages_sorted = sorted(msg_list, key = lambda msg: msg['date'])
+
+        return render_template('message_list.html', msg_list=messages_sorted, user_logged=user_logged)
 
 
 @application.route('/admin/message/<username>')
