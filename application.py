@@ -549,7 +549,7 @@ def api_messages():
     if not is_logged_in(access_token):
         return jsonify(Error().not_authorized('Invalid access token')), 410
 
-    msg_list = searchDB(table='Messages', key_expr=Key('to').eq(username))
+    msg_list = searchDB(table='Messages', key_expr=Key('to').eq(username), index_name='to-index')
 
     return jsonify({'items' : msg_list})
 
@@ -624,6 +624,7 @@ def api_admin_sendmsg(user_id):
 
     new_message={}
     new_message['to'] = to
+    new_message['id'] = str(int(round(time.time() * 1000)))
     new_message['from'] = sender
     new_message['date'] = cur_time
     new_message['flashed'] = 'F'
