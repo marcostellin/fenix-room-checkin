@@ -355,7 +355,7 @@ def write_msg(username):
     return render_template('send_message.html', username=username)
 
 
-@application.route('/user/ajax/messages', methods=['GET', 'POST'])
+@application.route('/user/ajax/messages')
 def get_messages():
 
     user = session.get('username')
@@ -365,16 +365,17 @@ def get_messages():
 
     messages = searchDB(table='Messages', key_expr=Key('to').eq(user), filter_expr=Attr('flashed').eq('F'))
 
-    if request.method == "GET":
-        
-        return jsonify(messages[0])
+    if not messages:
+        return 'No messages', 404
 
-    if request.method == "POST":
+    return jsonify(messages[0])
 
-        for item in messages:
-            updateDB(table='Messages', key={'to':item['to'], 'date':item['date']}, update_expr='SET flashed = :val', expr_vals={':val': 'T'})
+@application.route('/user/ajax/messages/<msg_id>', methods=['POST'])
+def update_messages(msg_id):    
 
-        return 'OK', 200
+    updateDB(table='Messages', key={'id': msg_id}, index_name='id-index', update_expr='SET flashed = :val', expr_vals={':val': 'T'})
+
+    return 'OK', 200
 
 
 #API Users 
@@ -771,14 +772,21 @@ def scanDB(table):
 
     return result_set['Items']
 
-def updateDB(table, key, update_expr, expr_vals):
+def updateDB(table, key, update_expr, expr_vals, index_name=None):
     dynamodb = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url=application.config['DB_ENDPOINT'])
     table = dynamodb.Table(table)
 
-    table.update_item(Key=key,
-                      UpdateExpression=update_expr,
-                      ExpressionAttributeValues=expr_vals,  
-                     )
+    if index_name is None:
+        table.update_item(Key=key,
+                          UpdateExpression=update_expr,
+                          ExpressionAttributeValues=expr_vals,  
+                         )
+    else:
+        table.update_item(Key=key,
+                          UpdateExpression=update_expr,
+                          ExpressionAttributeValues=expr_vals,
+                          IndexName=index_name,  
+                         )        
 
 def getItemDB(table, key):
     dynamodb = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url=application.config['DB_ENDPOINT'])

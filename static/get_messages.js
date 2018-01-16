@@ -5,7 +5,7 @@
                     
                     alertify.alert("Message from " + resp["from"], resp["content"],
                     function (){
-                       $.post("/user/ajax/messages", {read:"True"});
+                       $.post("/user/ajax/messages/"+resp["id"], {read:"True"});
                        setTimeout(worker, 5000);
                     })
 
