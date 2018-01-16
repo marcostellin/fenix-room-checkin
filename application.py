@@ -560,7 +560,7 @@ def api_messages():
 
     user_data = FenixRequest().get_person(access_token)
 
-    msg_list = searchDB(table='Messages', key_expr=Key('to').eq(user_data['username']), index_name='to-index')
+    msg_list = searchDB(table='Messages', key_expr=Key('to').eq(user_data['username']), index_name='to-index', proj_expr='content, date, from, to')
 
     return jsonify({'items' : msg_list})
 
