@@ -6,9 +6,11 @@ from flask import session, request, jsonify
 
 from make_request import *
 import json
+import string
 import fenixedu
 import boto3
 import time
+import random
 from boto3.dynamodb.conditions import Key, Attr
 from datetime import datetime, timedelta
 import memcache
@@ -83,7 +85,8 @@ def admin_auth():
 
         if is_admin_expired(admin_entry['expires']):
 
-            new_access_token = b64encode(os.urandom(64)).decode('utf-8')
+            #new_access_token = b64encode(os.urandom(64)).decode('utf-8')
+            new_access_token = getCode()
             updateDB(table='Admins', 
                      key={'username':username}, 
                      update_expr='SET access_token = :val0, expires = :val1', 
@@ -336,7 +339,7 @@ def msg_list(username):
         putDB(table='Messages', item=new_message)
 
 
-        return redirect(url_for('index'))
+        return render_template('msg_status.html')
 
     if request.method == 'GET':
         
@@ -698,8 +701,8 @@ def api_admin_checkins():
 @application.route('/api/<user_id>/messages', methods=['POST'])
 def api_admin_sendmsg(user_id):
 
-    access_token = request.form.get('access_token')
-    username = request.form.get('username')
+    access_token = request.args.get('access_token')
+    username = request.args.get('username')
     msg = request.form.get('msg')
 
     if access_token is None or username is None or msg is None:
@@ -777,7 +780,9 @@ def is_admin_logged_in(username, access_token):
     return True
 
 
-
+#OTHER FUNCIONS
+def getCode(length=32, char= string.ascii_letters+string.digits):
+    return ''.join(random.choice(char) for x in range(length))
 
 
 
